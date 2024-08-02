@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "agent_bot"
+version = "0.1.0"
+description = "Agent bot project"
+authors = ["Victor Bratko <bratko.viktor2004@gmail.com>"]
+license = "MIT"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.12"
+aiogram = "^3.10.0"
+aiopg = "^1.4.0"
+asyncpg = "^0.29.0"
+
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
