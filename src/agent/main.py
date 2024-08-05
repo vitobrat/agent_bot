@@ -1,24 +1,24 @@
+import os
 from config.config import config
-import openai
+from langchain_nvidia_ai_endpoints import ChatNVIDIA
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.output_parsers import StrOutputParser
+
+os.environ["NVIDIA_API_KEY"] = config("config.ini", "tokens")["openai_token"]
 
 
-system_content = "Express yourself like a Billy Harrington. Speaking only in russian."
-
-client = openai.OpenAI(
-    api_key=config("config.ini", "tokens")["openai_token"],
-    base_url="https://api.aimlapi.com",
-)
+model = ChatNVIDIA(model="meta/llama3-70b-instruct")
+parser = StrOutputParser()
+system_message = SystemMessage(content="Express yourself like a chat bot. Answering only in russian language")
 
 
 def answer(query: str) -> str:
-    chat_completion = client.chat.completions.create(
-        model="gpt-4-turbo",
-        messages=[
-            {"role": "system", "content": system_content},
-            {"role": "user", "content": query},
-        ],
-        temperature=0.7,
-        max_tokens=128,
-    )
-    response = chat_completion.choices[0].message.content
-    return response
+    messages = [
+        system_message,
+        HumanMessage(content=query),
+    ]
+    chain = model | parser
+    return chain.invoke(messages)
+
+
+

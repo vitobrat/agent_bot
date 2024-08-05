@@ -13,6 +13,8 @@ asyncpg = "^0.29.0"
 google-generativeai = "^0.7.2"
 openai = "^1.38.0"
 langchain = "^0.2.12"
+langchain-nvidia-ai-endpoints = "^0.2.0"
+pytest = "^8.3.2"
 
 
 
