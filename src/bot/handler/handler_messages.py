@@ -1,6 +1,6 @@
 from aiogram import types, F, Router, Bot
 from src.bot.keyboards import back_keyboard
-from src.aiopgsqldatabase.database import get_user
+from src.agent.main import answer
 
 router = Router()
 
@@ -20,3 +20,6 @@ async def about_handler(call: types.CallbackQuery) -> None:
 @router.message(F.text)
 async def print_text(message: types.Message):
     print(message.text)
+    response = answer(message.text)
+    await message.answer(response)
+

@@ -18,7 +18,7 @@ async def main() -> None:
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
     )
     logger.error("Starting bot")
-    token = config("config.ini", "bot_token")["token"]
+    token = config("config.ini", "tokens")["bot_token"]
     bot = Bot(token=token, default=DefaultBotProperties(parse_mode='HTML'))
     dp = Dispatcher()
     dp.include_routers(admin.router, handler_commands.router, handler_messages.router)

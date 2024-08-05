@@ -182,3 +182,4 @@ cython_debug/
 /dataSources.local.xml
 .idea/agent_bot.iml
 config/config.ini
+config/auth.json

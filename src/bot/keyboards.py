@@ -1,7 +1,6 @@
 from aiogram import types
 
 
-
 back_keyboard_list = [
     [
         types.InlineKeyboardButton(text="Back", callback_data='menu')
@@ -20,7 +19,6 @@ start_keyboard_list = [
     [types.InlineKeyboardButton(text="Help", callback_data="help")],
 ]
 start_keyboard = types.InlineKeyboardMarkup(inline_keyboard=start_keyboard_list)
-
 
 
 admin_keyboard_list = [
