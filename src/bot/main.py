@@ -5,7 +5,7 @@ from aiogram.client.default import DefaultBotProperties
 
 from src.bot import admin
 from src.bot.handler import handler_commands, handler_messages
-from src.aiopgsqldatabase.database import create_table
+from src.pgsqldatabase.database import Database
 from config.config import config
 import logging
 
@@ -23,7 +23,8 @@ async def main() -> None:
     dp = Dispatcher()
     dp.include_routers(admin.router, handler_commands.router, handler_messages.router)
 
-    await create_table()
+    database = Database()
+    await database.create_table()
 
     # Запускаем бота и пропускаем все накопленные входящие
     await bot.delete_webhook(drop_pending_updates=True)
