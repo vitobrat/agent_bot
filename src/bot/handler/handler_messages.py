@@ -18,9 +18,8 @@ async def about_handler(call: types.CallbackQuery) -> None:
 
 
 @router.message(F.text)
-async def print_text(message: types.Message):
+async def query(message: types.Message):
     print(message.text)
-    response = answer(message.text)
-
+    response = await answer(message.text)
     await message.answer(response)
 
