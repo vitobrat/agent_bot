@@ -1,8 +1,9 @@
 from aiogram import types, F, Router, Bot
 from src.bot.keyboards import back_keyboard
-from src.agent.main import answer
+from src.agent.main import Agent
 
 router = Router()
+agent = Agent()
 
 
 @router.callback_query(F.data == "contacts")
@@ -20,6 +21,6 @@ async def about_handler(call: types.CallbackQuery) -> None:
 @router.message(F.text)
 async def query(message: types.Message):
     print(message.text)
-    response = await answer(message.text)
+    response = await agent.answer(message)
     await message.answer(response)
 

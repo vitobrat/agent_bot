@@ -11,7 +11,6 @@ python = "^3.12"
 aiogram = "^3.10.0"
 asyncpg = "^0.29.0"
 google-generativeai = "^0.7.2"
-openai = "^1.38.0"
 langchain = "^0.2.12"
 langchain-nvidia-ai-endpoints = "^0.2.0"
 pytest = "^8.3.2"
@@ -19,6 +18,7 @@ langchain-google-vertexai = "^1.0.8"
 termcolor = "^2.4.0"
 pytest-asyncio = "^0.23.8"
 pytest-timeout = "^2.3.1"
+transformers = "^4.44.0"
 
 
 
