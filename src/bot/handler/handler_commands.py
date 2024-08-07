@@ -3,9 +3,10 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
 from src.bot.keyboards import menu_keyboard, start_keyboard, back_keyboard
-from src.aiopgsqldatabase.database import add_user
+from src.pgsqldatabase.database import Database
 
 router = Router()
+database = Database()
 
 
 @router.message(Command("start"))
@@ -17,7 +18,7 @@ async def start_command(message: types.Message) -> None:
     """
     await message.answer(f"Welcome, <b>{html.quote(message.from_user.full_name)}</b>!",
                          reply_markup=start_keyboard)
-    await add_user(message.from_user.id, message.from_user.full_name, message.from_user.username)
+    await database.add_user(message.from_user.id, message.from_user.full_name, message.from_user.username)
     print(message.from_user.id, message.from_user.full_name)
 
 

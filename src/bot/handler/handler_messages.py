@@ -21,5 +21,6 @@ async def about_handler(call: types.CallbackQuery) -> None:
 async def print_text(message: types.Message):
     print(message.text)
     response = answer(message.text)
+
     await message.answer(response)
 

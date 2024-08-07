@@ -4,10 +4,11 @@ from langchain_nvidia_ai_endpoints import ChatNVIDIA
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.output_parsers import StrOutputParser
 
-os.environ["NVIDIA_API_KEY"] = config("config.ini", "tokens")["openai_token"]
+
+os.environ["NVIDIA_API_KEY"] = config("config.ini", "tokens")["api_token"]
 
 
-model = ChatNVIDIA(model="meta/llama3-70b-instruct")
+model = ChatNVIDIA(model="meta/llama-3.1-405b-instruct")
 parser = StrOutputParser()
 system_message = SystemMessage(content="Express yourself like a chat bot. Answering only in russian language")
 
@@ -19,6 +20,7 @@ def answer(query: str) -> str:
     ]
     chain = model | parser
     return chain.invoke(messages)
+
 
 
 
