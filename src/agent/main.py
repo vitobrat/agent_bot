@@ -13,13 +13,14 @@ parser = StrOutputParser()
 system_message = SystemMessage(content="Express yourself like a chat bot. Answering only in russian language")
 
 
-def answer(query: str) -> str:
+async def answer(query: str) -> str:
     messages = [
         system_message,
         HumanMessage(content=query),
     ]
     chain = model | parser
-    return chain.invoke(messages)
+    respond = chain.invoke(messages)
+    return respond
 
 
 
