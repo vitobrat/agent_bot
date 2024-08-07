@@ -1,6 +1,6 @@
 from aiogram import types, F, Router, html
 from aiogram.filters import Command
-from aiogram.fsm.context import FSMContext
+from termcolor import colored
 
 from src.bot.keyboards import menu_keyboard, start_keyboard, back_keyboard
 from src.pgsqldatabase.database import Database
@@ -18,7 +18,10 @@ async def start_command(message: types.Message) -> None:
     """
     await message.answer(f"Welcome, <b>{html.quote(message.from_user.full_name)}</b>!",
                          reply_markup=start_keyboard)
-    await database.add_user(message.from_user.id, message.from_user.full_name, message.from_user.username)
+    try:
+        await database.add_user(message.from_user.id, message.from_user.full_name, message.from_user.username)
+    except ValueError as e:
+        print(colored(e, "red"))
     print(message.from_user.id, message.from_user.full_name)
 
 

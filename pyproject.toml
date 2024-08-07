@@ -16,6 +16,7 @@ langchain = "^0.2.12"
 langchain-nvidia-ai-endpoints = "^0.2.0"
 pytest = "^8.3.2"
 langchain-google-vertexai = "^1.0.8"
+termcolor = "^2.4.0"
 
 
 
