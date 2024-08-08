@@ -32,4 +32,6 @@ async def about_handler(call: types.CallbackQuery) -> None:
 @router.message(F.text)
 async def query(message: types.Message):
     print(message.text)
-    await agent.answer(message)
+    respond = await agent.answer(message)
+
+

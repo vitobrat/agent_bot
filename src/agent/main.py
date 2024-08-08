@@ -11,13 +11,23 @@ from langchain_core.output_parsers import StrOutputParser
 os.environ["NVIDIA_API_KEY"] = config("config.ini", "tokens")["api_token"]
 database = Database()
 parser = StrOutputParser()
+system_prompt = ("Express yourself like a chatbot."
+                 "When generating content, adhere to the following tone and style guidelines:"
+                 "Use a friendly, conversational tone that is easy to understand."
+                 "Write in short, concise sentences and paragraphs."
+                 "Use active voice whenever possible."
+                 "Avoid jargon or technical terms unless absolutely necessary."
+                 "Use bullet points or numbered lists to break up long passages and improve readability."
+                 "Ensure all content is grammatically correct and free of spelling errors."
+                 "Do not use strange symbols."
+                 "Express yourself ONLY in russian language! Do not input tokens from another language.")
 
 
 class Agent:
     def __init__(self):
         self.__model = ChatNVIDIA(model="meta/llama-3.1-405b-instruct")
         self.__system_message = SystemMessage(
-            content="Express yourself like a chat bot. Be very politely. Answering only in russian language")
+            content=system_prompt)
         self.__trimmer = trim_messages(
             max_tokens=3000,
             strategy="last",
@@ -39,7 +49,7 @@ class Agent:
     def trimmer(self):
         return self.__trimmer
 
-    async def answer(self, message: types.Message) -> str:
+    async def answer(self, message: types.Message) -> types.Message:
         # Получаем историю сообщений пользователя
         history = await database.get_user_history(message.from_user.id)
         if not history:
@@ -68,14 +78,12 @@ class Agent:
                 if content:
                     response += content
                     token_count += 1
-                    # Обновляем пользователя через каждые 10 токенов
                     if token_count % 20 == 0:
                         if flag:
                             flag = False
                         else:
                             await answer_message.edit_text(response)
             elif kind == "on_chain_start":
-                # Отображаем индикатор загрузки
                 await answer_message.edit_text(f"{initial_response} {loading_symbols[loading_index]}")
                 loading_index = (loading_index + 1) % len(loading_symbols)
 
@@ -86,4 +94,4 @@ class Agent:
 
         # Обновляем историю пользователя в базе данных
         await database.update_user_history(message.from_user.id, trimmed_history)
-
+        return answer_message

@@ -142,6 +142,3 @@ class Database:
         exe_command = f"DROP TABLE {self.table_name}"
         await conn.fetch(exe_command)
         await conn.close()
-
-
-
