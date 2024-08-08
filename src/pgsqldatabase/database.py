@@ -52,7 +52,7 @@ class Database:
 
     async def print_all_users(self):
         return "\n".join([f"{i}) ID - {user[0]}; Full name - {user[1]}; User name - {user[2]};Is admin - {user[3]};"
-                          f" History - {user[4]}" for i, user in enumerate(await self.get_all_users())])
+                          f" History - {user[4][:5]}" for i, user in enumerate(await self.get_all_users())])
 
     async def add_user(self, user_id, user_fullname, user_username, is_admin=0, history=None):
         # Проверка user_id на наличие только цифр
@@ -119,7 +119,9 @@ class Database:
             return []
         return json.loads(row['history'], object_hook=message_decoder)
 
-    async def update_user_history(self, user_id, new_history):
+    async def update_user_history(self, user_id, new_history=None):
+        if new_history is None:
+            new_history = []
         conn = await asyncpg.connect(**database)
         exe_command = f'''
             UPDATE {self.table_name}
