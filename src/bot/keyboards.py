@@ -9,6 +9,7 @@ back_keyboard_list = [
 back_keyboard = types.InlineKeyboardMarkup(inline_keyboard=back_keyboard_list)
 
 menu_keyboard_list = [
+    [types.InlineKeyboardButton(text="Очистить историю", callback_data="clear_history")],
     [types.InlineKeyboardButton(text="Contacts", callback_data="contacts")],
     [types.InlineKeyboardButton(text="About project", callback_data="about_project")],
 ]
