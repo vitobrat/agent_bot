@@ -1,4 +1,3 @@
-import os
 from aiogram import types
 from config.config import config
 from langchain_nvidia_ai_endpoints import ChatNVIDIA

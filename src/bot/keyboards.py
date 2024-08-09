@@ -41,10 +41,9 @@ start_keyboard = types.InlineKeyboardMarkup(inline_keyboard=start_keyboard_list)
 
 
 admin_keyboard_list = [
-    [
-        types.InlineKeyboardButton(text='Statistics', callback_data='admin_statistic'),
-        types.InlineKeyboardButton(text='News letter', callback_data='admin_newsletter')
-    ]
+    [types.InlineKeyboardButton(text='Статистика', callback_data='admin_statistic')],
+    [types.InlineKeyboardButton(text='Новостное уведомление', callback_data='admin_newsletter')],
+    [types.InlineKeyboardButton(text='Спарсить сегодняшние статьи', callback_data='admin_parse_articles')]
 ]
 admin_keyboard = types.InlineKeyboardMarkup(inline_keyboard=admin_keyboard_list)
 
