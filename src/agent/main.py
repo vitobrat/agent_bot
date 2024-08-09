@@ -8,24 +8,26 @@ from src.pgsqldatabase.database import Database
 from langchain_core.messages import SystemMessage, trim_messages, AIMessage
 from langchain_core.output_parsers import StrOutputParser
 
-os.environ["NVIDIA_API_KEY"] = config("config.ini", "tokens")["api_token"]
+api_key = config("config.ini", "tokens")["api_token"]
 database = Database()
 parser = StrOutputParser()
-system_prompt = ("Express yourself like a chatbot."
-                 "When generating content, adhere to the following tone and style guidelines:"
-                 "Use a friendly, conversational tone that is easy to understand."
-                 "Write in short, concise sentences and paragraphs."
-                 "Use active voice whenever possible."
-                 "Avoid jargon or technical terms unless absolutely necessary."
-                 "Use bullet points or numbered lists to break up long passages and improve readability."
-                 "Ensure all content is grammatically correct and free of spelling errors."
-                 "Do not use strange symbols."
-                 "Express yourself ONLY in russian language! Do not input tokens from another language.")
+system_prompt = ("Веди себя как чат-бот."
+                 "При создании контента придерживайтесь следующих правил тона и стиля:"
+                 "Используйте дружелюбный, разговорный тон, который легко понять."
+                 "Пиши коротко и только нужную информацию."
+                 "Избегайте жаргона и технических терминов без крайней необходимости."
+                 "Убедись, что весь контент грамматически правильный и не содержит орфографических ошибок."
+                 "Не используй случайные символы."
+                 "Отвечай только на русском языке! Не используй токены на других языках.")
 
 
 class Agent:
     def __init__(self):
-        self.__model = ChatNVIDIA(model="meta/llama-3.1-405b-instruct")
+        self.__model = ChatNVIDIA(model="meta/llama-3.1-405b-instruct",
+                                  api_key=api_key,
+                                  temperature=0.2,
+                                  top_p=0.7,
+                                  max_tokens=256)
         self.__system_message = SystemMessage(
             content=system_prompt)
         self.__trimmer = trim_messages(
@@ -56,7 +58,8 @@ class Agent:
             history.append(self.system_message)
 
         # Добавляем текущий запрос пользователя
-        history.append(HumanMessage(content=message.text))
+        history.append(HumanMessage(content=f"Пожалуйста, отвечай на этот запрос исключительно на русском языке:"
+                                            f" {message.text}"))
 
         trimmed_history = self.trimmer.invoke([self.system_message] + history)
 
