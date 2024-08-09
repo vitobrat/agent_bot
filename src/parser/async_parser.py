@@ -57,6 +57,7 @@ class AsyncParser:
     async def parse(self):
         async with aiohttp.ClientSession() as session:
             await self.fetch_urls(session)
+            print(self.urls)
             tasks = [self.fetch_article(session, url) for url in self.urls]
             articles = await asyncio.gather(*tasks)
             return articles
