@@ -44,6 +44,7 @@ async def page_articles_today_handler(call: types.CallbackQuery) -> None:
         await articles.generate_today_pages()
     if not articles.list_of_today_pages:
         await call.message.answer("Сегодня еще не вышла ни одна статья")
+        return
     if call.data == "show_page_article_today":
         await articles.page_index_today_start()
         response = articles.list_of_today_pages[articles.page_index_today]

@@ -29,7 +29,7 @@ async def save_to_json(data, filename):
         json.dump(existing_data, file, ensure_ascii=False, indent=4)
 
 
-async def main(target_date) -> None:
+async def main(target_date: str) -> None:
     target_date = target_date
     parser = AsyncParser(target_date)
     articles = await parser.parse()

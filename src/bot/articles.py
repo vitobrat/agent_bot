@@ -8,21 +8,25 @@ form = ("Описание статьи: {0}\n"
 
 
 class Articles:
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(Articles, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self):
-        self.__list_of_all_pages = []
-        self.__list_of_today_pages = []
-        self.__filename = "articles.json"
-        self.__page_index_all = 0
-        self.__page_index_today = 0
-        self.__all_articles = self.load_all_data()
+        if not hasattr(self, "_initialized"):
+            self.__list_of_all_pages = []
+            self.__list_of_today_pages = []
+            self.__filename = "articles.json"
+            self.__page_index_all = 0
+            self.__page_index_today = 0
+            self._initialized = True
 
     @property
     def filename(self):
         return self.__filename
-
-    @property
-    def all_articles(self):
-        return self.__all_articles
 
     @property
     def page_index_today(self):
@@ -58,18 +62,17 @@ class Articles:
     def list_of_today_pages(self):
         return self.__list_of_today_pages
 
-    def load_all_data(self) -> dict:
+    async def load_all_data(self) -> dict:
         if os.path.exists(self.filename):
             with open(self.filename, 'r', encoding='utf-8') as file:
                 return json.load(file)
         return {}
 
-    async def generate_all_pages(self) -> None:
-        if len(self.list_of_all_pages) == (len(self.all_articles) // 5) + (len(self.all_articles) % 5) % 2:
-            return
+    async def generate_all_pages(self) -> (None, str):
+        all_articles = await self.load_all_data()
         page = []
         self.__list_of_all_pages = []
-        for i, (url, content) in enumerate(reversed(self.all_articles.items())):
+        for i, (url, content) in enumerate(reversed(all_articles.items())):
             page.append(form.format(content["summarization_article"], url, content["date"]))
             if (i + 1) % 5 == 0:
                 self.__list_of_all_pages.append(page)
@@ -78,8 +81,18 @@ class Articles:
             self.__list_of_all_pages.append(page)
 
     async def generate_today_pages(self) -> None:
+        all_articles = await self.load_all_data()
         self.__list_of_today_pages = []
-        for url, content in reversed(self.all_articles.items()):
+        for url, content in reversed(all_articles.items()):
             if content["date"] == datetime.today().strftime('%Y-%m-%d'):
                 self.list_of_today_pages.append(form.format(content["summarization_article"],
                                                             url, content["date"]))
+
+    async def test(self, test: str) -> None:
+        self.__list_of_all_pages.append(test)
+        self.__list_of_today_pages.append(test)
+
+    async def clear(self) -> None:
+        self.__list_of_all_pages = []
+        self.__list_of_today_pages = []
+
