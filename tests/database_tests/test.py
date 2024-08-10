@@ -1,6 +1,6 @@
 import pytest
 from src.pgsqldatabase.database import Database
-from langchain_core.messages import SystemMessage, trim_messages, AIMessage, HumanMessage
+from langchain_core.messages import SystemMessage, AIMessage, HumanMessage
 
 # pytest tests/database_tests/test.py -s -v
 database = Database("users_test")
