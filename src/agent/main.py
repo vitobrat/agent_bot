@@ -1,9 +1,7 @@
-import os
 from aiogram import types
 from config.config import config
 from langchain_nvidia_ai_endpoints import ChatNVIDIA
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_core.runnables import RunnablePassthrough
+from langchain_core.messages import HumanMessage
 from src.pgsqldatabase.database import Database
 from langchain_core.messages import SystemMessage, trim_messages, AIMessage
 from langchain_core.output_parsers import StrOutputParser
@@ -11,14 +9,17 @@ from langchain_core.output_parsers import StrOutputParser
 api_key = config("config.ini", "tokens")["api_token"]
 database = Database()
 parser = StrOutputParser()
-system_prompt = ("Веди себя как чат-бот."
-                 "При создании контента придерживайтесь следующих правил тона и стиля:"
-                 "Используйте дружелюбный, разговорный тон, который легко понять."
-                 "Пиши коротко и только нужную информацию."
-                 "Избегайте жаргона и технических терминов без крайней необходимости."
-                 "Убедись, что весь контент грамматически правильный и не содержит орфографических ошибок."
-                 "Не используй случайные символы."
-                 "Отвечай только на русском языке! Не используй токены на других языках.")
+system_agent_prompt = ("Веди себя как чат-бот."
+                       "При создании контента придерживайтесь следующих правил тона и стиля:"
+                       "Используйте дружелюбный, разговорный тон, который легко понять."
+                       "Пиши коротко и только нужную информацию."
+                       "Избегайте жаргона и технических терминов без крайней необходимости."
+                       "Убедись, что весь контент грамматически правильный и не содержит орфографических ошибок."
+                       "Не используй случайные символы."
+                       "Отвечай только на русском языке! Не используй токены на других языках.")
+
+system_sum_prompt = ("Твоя задача написать краткое содержание новости по теме криптовалют."
+                     "Напиши главный смысл новости используя 1 или 2 предложения.")
 
 
 class Agent:
@@ -29,7 +30,7 @@ class Agent:
                                   top_p=0.7,
                                   max_tokens=256)
         self.__system_message = SystemMessage(
-            content=system_prompt)
+            content=system_agent_prompt)
         self.__trimmer = trim_messages(
             max_tokens=3000,
             strategy="last",
@@ -50,6 +51,22 @@ class Agent:
     @property
     def trimmer(self):
         return self.__trimmer
+
+    async def summarization(self, text: str) -> str:
+        chain = self.model | parser
+        response = chain.invoke([
+            SystemMessage(content=system_sum_prompt),
+            HumanMessage(content=text)
+        ])
+        return response
+
+    async def test_greeting(self, query: str) -> str:
+        chain = self.model | parser
+        response = chain.invoke([
+            SystemMessage(content=system_agent_prompt),
+            HumanMessage(content=query)
+        ])
+        return response
 
     async def answer(self, message: types.Message) -> types.Message:
         # Получаем историю сообщений пользователя

@@ -1,6 +1,6 @@
 from asyncio import sleep
 from contextlib import suppress
-
+from datetime import datetime
 from aiogram import types, F, Router
 from aiogram.filters import Command
 from src.bot.keyboards import admin_keyboard, back_admin_keyboard
@@ -8,6 +8,8 @@ from src.bot.my_filters import AdminFilter
 from src.pgsqldatabase.database import Database
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
+from src.parser.main import main as parser_main
+from src.bot.articles import Articles
 
 router = Router()
 database = Database()
@@ -49,3 +51,14 @@ async def admin_newsletter_step_2(message: types.Message, state: FSMContext):
             await message.send_copy(user_id)
             await sleep(0.3)
     await state.clear()
+
+
+@router.callback_query(F.data == 'admin_parse_articles', AdminFilter())
+async def admin_parse_today_articles(call: types.CallbackQuery):
+    articles = Articles()
+    print(articles.list_of_all_pages)
+    target_time = datetime.today().strftime('%Y-%m-%d')
+    await parser_main(target_time)
+    await articles.generate_all_pages()
+    await articles.generate_today_pages()
+

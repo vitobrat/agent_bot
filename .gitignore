@@ -183,3 +183,4 @@ cython_debug/
 .idea/agent_bot.iml
 config/config.ini
 config/auth.json
+articles.json
