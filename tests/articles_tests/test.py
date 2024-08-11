@@ -4,12 +4,12 @@ from src.bot.articles import Articles
 
 # pytest tests/articles_tests/test.py -s -v
 
+
 @pytest.mark.asyncio
 class TestArticles:
 
     async def test_generate_all(self):
         articles = Articles()
-        print(articles.list_of_all_pages)
         await articles.generate_all_pages()
         assert articles.list_of_all_pages
 

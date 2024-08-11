@@ -22,6 +22,7 @@ class Articles:
             self.__filename = "articles.json"
             self.__page_index_all = 0
             self.__page_index_today = 0
+            self.__all_articles = None
             self._initialized = True
 
     @property
@@ -62,17 +63,21 @@ class Articles:
     def list_of_today_pages(self):
         return self.__list_of_today_pages
 
-    async def load_all_data(self) -> dict:
+    @property
+    def all_articles(self):
+        return self.__all_articles
+
+    async def load_all_data(self):
         if os.path.exists(self.filename):
             with open(self.filename, 'r', encoding='utf-8') as file:
-                return json.load(file)
-        return {}
+                self.__all_articles = json.load(file)
+                return
+        self.__all_articles = {}
 
     async def generate_all_pages(self) -> (None, str):
-        all_articles = await self.load_all_data()
         page = []
         self.__list_of_all_pages = []
-        for i, (url, content) in enumerate(reversed(all_articles.items())):
+        for i, (url, content) in enumerate(reversed(self.all_articles.items())):
             page.append(form.format(content["summarization_article"], url, content["date"]))
             if (i + 1) % 5 == 0:
                 self.__list_of_all_pages.append(page)
@@ -81,9 +86,8 @@ class Articles:
             self.__list_of_all_pages.append(page)
 
     async def generate_today_pages(self) -> None:
-        all_articles = await self.load_all_data()
         self.__list_of_today_pages = []
-        for url, content in reversed(all_articles.items()):
+        for url, content in reversed(self.all_articles.items()):
             if content["date"] == datetime.today().strftime('%Y-%m-%d'):
                 self.list_of_today_pages.append(form.format(content["summarization_article"],
                                                             url, content["date"]))
@@ -95,4 +99,3 @@ class Articles:
     async def clear(self) -> None:
         self.__list_of_all_pages = []
         self.__list_of_today_pages = []
-

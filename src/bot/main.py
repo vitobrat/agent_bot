@@ -8,6 +8,9 @@ from src.bot.handler import handler_commands, handler_messages
 from src.pgsqldatabase.database import Database
 from config.config import config
 import logging
+from src.bot.articles import Articles
+from src.agent.main import Agent
+
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +28,12 @@ async def main() -> None:
 
     database = Database()
     await database.create_table()
+
+    articles = Articles()
+    await articles.load_all_data()
+
+    agent = Agent()
+    await agent.generate_agent_executor()
 
     # Запускаем бота и пропускаем все накопленные входящие
     await bot.delete_webhook(drop_pending_updates=True)
