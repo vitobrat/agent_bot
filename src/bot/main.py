@@ -31,6 +31,8 @@ async def main() -> None:
 
     articles = Articles()
     await articles.load_all_data()
+    await articles.generate_all_pages()
+    await articles.generate_today_pages()
 
     agent = Agent()
     await agent.generate_agent_executor()

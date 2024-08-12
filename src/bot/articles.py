@@ -4,7 +4,7 @@ from datetime import datetime
 
 form = ("Описание статьи: {0}\n"
         "Ссылка на статью: {1}\n"
-        "Дата публикации: {2}\n")
+        "Дата публикации: {2}, {3}\n")
 
 
 class Articles:
@@ -78,7 +78,7 @@ class Articles:
         page = []
         self.__list_of_all_pages = []
         for i, (url, content) in enumerate(reversed(self.all_articles.items())):
-            page.append(form.format(content["summarization_article"], url, content["date"]))
+            page.append(form.format(content["summarization_article"], url, content["date"], content["time"]))
             if (i + 1) % 5 == 0:
                 self.__list_of_all_pages.append(page)
                 page = []
@@ -89,8 +89,9 @@ class Articles:
         self.__list_of_today_pages = []
         for url, content in reversed(self.all_articles.items()):
             if content["date"] == datetime.today().strftime('%Y-%m-%d'):
+                date = content["date"].split('-')
                 self.list_of_today_pages.append(form.format(content["summarization_article"],
-                                                            url, content["date"]))
+                                                            url, f"{date[-1]}.{date[1]}.{date[0]}", content["time"]))
 
     async def test(self, test: str) -> None:
         self.__list_of_all_pages.append(test)

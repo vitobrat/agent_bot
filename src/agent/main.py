@@ -1,4 +1,6 @@
 import os
+from typing import List, Dict, Any
+
 from aiogram import types
 from config.config import config
 from langchain_nvidia_ai_endpoints import ChatNVIDIA, NVIDIAEmbeddings
@@ -135,13 +137,15 @@ class Agent:
         ])
         return response
 
-    async def translation(self, text: str) -> str:
-        chain = self.model | parser
-        response = chain.invoke([
-            SystemMessage(content=system_translate_prompt),
-            HumanMessage(content=text)
-        ])
-        return response
+    @staticmethod
+    async def formatted_history(history: list) -> list[dict[str, str] | Any]:
+        return [
+            {"role": "system", "content": system_agent_prompt},
+            *[
+                {"role": "user" if isinstance(msg, HumanMessage) else "assistant", "content": msg.content}
+                for msg in history
+            ]
+        ]
 
     async def test_greeting(self, query: str) -> str:
         history = await database.get_user_history(1044539451)
@@ -154,17 +158,15 @@ class Agent:
         trimmed_history = self.trimmer.invoke(history)
 
         # Преобразуем историю в правильный формат для agent_executor
-        formatted_history = [
-            {"role": "system", "content": system_agent_prompt},
-            *[
-                {"role": "user" if isinstance(msg, HumanMessage) else "assistant", "content": msg.content}
-                for msg in trimmed_history
-            ]
-        ]
+        formatted_history = await self.formatted_history(trimmed_history)
         print(formatted_history)
         response = self.agent_executor.invoke({"messages": formatted_history})
         print(response)
-        final_response = await self.translation(response["messages"][-1].content)
+        chain = self.model | parser
+        final_response = chain.invoke([
+            SystemMessage(content=system_translate_prompt),
+            HumanMessage(content=response["messages"][-1].content)
+        ])
         return final_response
 
     async def answer(self, message: types.Message) -> types.Message:
@@ -178,15 +180,6 @@ class Agent:
 
         trimmed_history = self.trimmer.invoke(history)
 
-        # Преобразуем историю в правильный формат для agent_executor
-        formatted_history = [
-            {"role": "system", "content": system_agent_prompt},
-            *[
-                {"role": "user" if isinstance(msg, HumanMessage) else "assistant", "content": msg.content}
-                for msg in trimmed_history
-            ]
-        ]
-
         chain = self.model | parser
         response = ""
         token_count = 0
@@ -197,8 +190,7 @@ class Agent:
         flag = True
 
         answer_message = await message.answer(initial_response)
-        print(formatted_history)
-        rag_response = self.agent_executor.invoke({"messages": formatted_history})
+        rag_response = self.agent_executor.invoke({"messages": await self.formatted_history(trimmed_history)})
         await answer_message.edit_text(generate_response)
         print(rag_response["messages"][-1].content)
         async for event in chain.astream_events([

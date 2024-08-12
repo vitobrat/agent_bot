@@ -1,6 +1,5 @@
 from bs4 import BeautifulSoup
 import aiohttp
-import asyncio
 
 URL = "https://ru.investing.com/news/cryptocurrency-news"
 
@@ -8,15 +7,18 @@ URL = "https://ru.investing.com/news/cryptocurrency-news"
 class AsyncParser:
     def __init__(self, date):
         self.__date = date
-        self.__urls = []
+        self.__data = {"urls": [],
+                       "articles": [],
+                       "date": [],
+                       "time": []}
 
     @property
     def date(self):
         return self.__date
 
     @property
-    def urls(self):
-        return self.__urls
+    def data(self):
+        return self.__data
 
     @staticmethod
     async def fetch_article(session, url: str) -> str:
@@ -49,14 +51,12 @@ class AsyncParser:
                         # Если даты совпадают, то получаем ссылку на статью
                         link = article.find("a", {"data-test": "article-title-link"})
                         if link and "href" in link.attrs:
-                            # Добавляем ссылку в список
-                            self.urls.append(link["href"])
-
-        return self.urls
+                            self.data["urls"].append(link["href"])
+                            self.data["articles"].append(await self.fetch_article(session, link["href"]))
+                            self.data["date"].append(article_date)
+                            self.data["time"].append(time_element["datetime"].split(" ")[-1])
 
     async def parse(self):
         async with aiohttp.ClientSession() as session:
             await self.fetch_urls(session)
-            tasks = [self.fetch_article(session, url) for url in self.urls]
-            articles = await asyncio.gather(*tasks)
-            return articles
+            return self.data
