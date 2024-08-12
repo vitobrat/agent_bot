@@ -1,6 +1,5 @@
 import os
-from typing import List, Dict, Any
-
+from typing import Any
 from aiogram import types
 from config.config import config
 from langchain_nvidia_ai_endpoints import ChatNVIDIA, NVIDIAEmbeddings
@@ -22,13 +21,20 @@ api_key = config("config.ini", "tokens")["api_token"]
 os.environ["NVIDIA_API_KEY"] = api_key
 database = Database()
 parser = StrOutputParser()
-system_agent_prompt = ("Express yourself like a chatbot")
+system_agent_prompt = ("Express yourself like a chatbot."
+                       "Your task is to take useful information from news about cryptocurrencies"
+                       " and answer the user’s question. Answer grammatically correct, politely and correctly."
+                       " If you don't know how to answer a question,"
+                       " then politely answer that you don't know the answer.")
 
 system_sum_prompt = ("Твоя задача написать краткое содержание новости по теме криптовалют."
                      "Напиши главный смысл новости используя 1 или 2 предложения.")
-system_translate_prompt = ("Твоя задача перевести данный текст на русский."
-                           "Если текст уже на русском, то верни его в исходном состоянии."
-                           "Если в тексте написан бред, то вежливо скажи, что не можешь ответить на запрос")
+system_translate_rus_prompt = ("Твоя задача перевести данный текст на русский."
+                               "Если текст уже на русском, то верни его в исходном состоянии."
+                               "Если в тексте написан бред, то вежливо скажи, что не можешь ответить на запрос")
+system_translate_eng_prompt = ("Your task is to translate this text into English."
+                               "If text already in english, then just return origin text")
+
 user_prompt = PromptTemplate.from_template("You must answer correctly, briefly and informatively."
                                            "This is my query: {query}")
 
@@ -42,7 +48,7 @@ class Agent:
         return cls._instance
 
     def __init__(self):
-        if not hasattr(self, '_initialized'):  # Чтобы избежать повторной инициализации
+        if not hasattr(self, '_initialized'):
             self.__model = ChatNVIDIA(model="meta/llama-3.1-405b-instruct",
                                       temperature=0.1,
                                       top_p=0.7,
@@ -80,14 +86,14 @@ class Agent:
         # Преобразование статей из `Articles` в формат документов, ожидаемый LangChain
         docs = []
         for url, content in articles.all_articles.items():
-            docs.append(Document(page_content=content["article"], metadata={"url": url}))
+            docs.append(Document(page_content=content["article"]))
         return docs
 
     async def generate_agent_executor(self):
         docs = await self.load_articles_as_documents()
 
         # 2. Разбиение на части
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=200, chunk_overlap=100)
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
         splits = text_splitter.split_documents(docs)
         print(f"Number of splits: {len(splits)}")
 
@@ -102,7 +108,7 @@ class Agent:
         retriever = vectorstore.as_retriever()
 
         # 5. Настройка RePhraseQueryRetriever с LLMChain
-        QUERY_PROMPT = PromptTemplate(
+        query_prompt = PromptTemplate(
             input_variables=["question"],
             template="""You are an assistant tasked with taking a natural language query from a user
             and converting it into a query for a vectorstore. In the process, strip out all 
@@ -111,7 +117,7 @@ class Agent:
         )
 
         llm = self.model
-        llm_chain = LLMChain(llm=llm, prompt=QUERY_PROMPT)
+        llm_chain = LLMChain(llm=llm, prompt=query_prompt)
 
         retriever_from_llm_chain = RePhraseQueryRetriever(
             retriever=retriever,
@@ -147,13 +153,21 @@ class Agent:
             ]
         ]
 
+    async def translation(self, text: str, sys_prompt) -> str:
+        chain = self.model | parser
+        response = chain.invoke([
+            SystemMessage(content=sys_prompt),
+            HumanMessage(content=text)
+        ])
+        return response
+
     async def test_greeting(self, query: str) -> str:
         history = await database.get_user_history(1044539451)
         if not history:
             history.append(self.system_message)
 
         # Добавляем текущий запрос пользователя
-        history.append(HumanMessage(content=user_prompt.format(query=query)))
+        history.append(HumanMessage(content=user_prompt.format(query=await self.translation(query, system_translate_eng_prompt))))
 
         trimmed_history = self.trimmer.invoke(history)
 
@@ -162,11 +176,7 @@ class Agent:
         print(formatted_history)
         response = self.agent_executor.invoke({"messages": formatted_history})
         print(response)
-        chain = self.model | parser
-        final_response = chain.invoke([
-            SystemMessage(content=system_translate_prompt),
-            HumanMessage(content=response["messages"][-1].content)
-        ])
+        final_response = await self.translation(response["messages"][-1].content, system_translate_rus_prompt)
         return final_response
 
     async def answer(self, message: types.Message) -> types.Message:
@@ -194,7 +204,7 @@ class Agent:
         await answer_message.edit_text(generate_response)
         print(rag_response["messages"][-1].content)
         async for event in chain.astream_events([
-            SystemMessage(content=system_translate_prompt),
+            SystemMessage(content=system_translate_rus_prompt),
             HumanMessage(content=rag_response["messages"][-1].content)
         ], version="v1"):
             kind = event["event"]

@@ -58,7 +58,6 @@ async def admin_newsletter_step_2(message: types.Message, state: FSMContext):
 async def admin_parse_today_articles(call: types.CallbackQuery):
     articles = Articles()
     agent = Agent()
-    print(articles.list_of_all_pages)
     target_time = datetime.today().strftime('%Y-%m-%d')
     await parser_main(target_time)
     await articles.load_all_data()

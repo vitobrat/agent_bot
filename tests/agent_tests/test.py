@@ -15,7 +15,7 @@ import pytest
 @pytest.mark.asyncio
 async def test_request():
     agent = Agent()
-    query = "Че щас творится с Toncoin?"
+    query = "Че щас творится с Биткоином?"
     response = await agent.test_greeting(query)
     print(response)
     assert len(response) >= 1
