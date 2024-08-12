@@ -21,6 +21,8 @@ pytest-timeout = "^2.3.1"
 transformers = "^4.44.0"
 requests = "^2.32.3"
 beautifulsoup4 = "^4.12.3"
+langgraph = "^0.2.3"
+langchain_chroma = "^0.1.2"
 
 
 

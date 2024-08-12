@@ -17,9 +17,6 @@ def join_articles(list_of_articles: list) -> str:
 @router.callback_query(F.data.in_({"show_page_article_all",
                                    "show_page_article_all_inline_btn_next", "show_page_article_all_inline_btn_prev"}))
 async def page_articles_all_handler(call: types.CallbackQuery) -> None:
-    if not articles.list_of_all_pages:
-        await articles.generate_all_pages()
-
     if call.data == "show_page_article_all":
         await articles.page_index_all_start()
         response = join_articles(articles.list_of_all_pages[articles.page_index_all])
@@ -40,8 +37,6 @@ async def page_articles_all_handler(call: types.CallbackQuery) -> None:
                                    "show_page_article_today_inline_btn_next",
                                    "show_page_article_today_inline_btn_prev"}))
 async def page_articles_today_handler(call: types.CallbackQuery) -> None:
-    if not articles.list_of_today_pages:
-        await articles.generate_today_pages()
     if not articles.list_of_today_pages:
         await call.message.answer("Сегодня еще не вышла ни одна статья")
         return

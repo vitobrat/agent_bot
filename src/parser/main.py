@@ -17,10 +17,10 @@ async def save_to_json(data, filename):
     existing_data = await load_existing_data(filename)
 
     # Добавляем новые статьи, если они ещё не существуют в файле
-    for entry in data:
+    for entry in reversed(data):
         url = entry["url"]
         if url not in existing_data:
-            existing_data[url] = dict(article=entry["article"], date=entry["date"],
+            existing_data[url] = dict(article=entry["article"], date=entry["date"], time=entry["time"],
                                       summarization_article=await agent.summarization(entry["article"]))
             print(url)
 
@@ -32,11 +32,14 @@ async def save_to_json(data, filename):
 async def main(target_date: str) -> None:
     target_date = target_date
     parser = AsyncParser(target_date)
-    articles = await parser.parse()
+    await parser.parse()
 
     # Формируем структуру для сохранения в JSON
     data_to_save = [{"url": url, "article": article,
-                     "date": target_date} for url, article in zip(parser.urls, articles)]
+                     "date": date, "time": time} for url, article, date, time in zip(parser.data["urls"],
+                                                                                     parser.data["articles"],
+                                                                                     parser.data["date"],
+                                                                                     parser.data["time"])]
 
     if data_to_save:
         await save_to_json(data_to_save, 'articles.json')
