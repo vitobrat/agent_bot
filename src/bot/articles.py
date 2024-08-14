@@ -1,6 +1,6 @@
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 form = ("Описание статьи: {0}\n"
         "Ссылка на статью: {1}\n"
@@ -67,12 +67,26 @@ class Articles:
     def all_articles(self):
         return self.__all_articles
 
-    async def load_all_data(self):
+    async def load_articles(self):
+        """Загружает статьи из файла."""
         if os.path.exists(self.filename):
             with open(self.filename, 'r', encoding='utf-8') as file:
-                self.__all_articles = json.load(file)
-                return
-        self.__all_articles = {}
+                return json.load(file)
+        return {}
+
+    async def save_articles(self, articles):
+        """Сохраняет статьи в файл."""
+        if os.path.exists(self.filename):
+            with open(self.filename, 'w', encoding='utf-8') as file:
+                json.dump(articles, file, ensure_ascii=False, indent=4)
+
+    async def load(self) -> None:
+        await self.load_all_data()
+        await self.generate_all_pages()
+        await self.generate_today_pages()
+
+    async def load_all_data(self):
+        self.__all_articles = await self.load_articles()
 
     async def generate_all_pages(self) -> (None, str):
         page = []
@@ -92,6 +106,22 @@ class Articles:
                 date = content["date"].split('-')
                 self.list_of_today_pages.append(form.format(content["summarization_article"],
                                                             url, f"{date[-1]}.{date[1]}.{date[0]}", content["time"]))
+
+    async def clean_old_articles(self, date=(datetime.today() - timedelta(days=7)).strftime("%Y-%m-%d")) -> None:
+        # Преобразуем строку с датой в объект datetime для сравнения
+        cutoff_date = datetime.strptime(date, "%Y-%m-%d")
+        articles = await self.load_articles()
+
+        # Фильтруем статьи, оставляя только те, которые выпущены после cutoff_date
+        filtered_articles = {
+            url: content for url, content in articles.items()
+            if datetime.strptime(content['date'], "%Y-%m-%d") > cutoff_date
+        }
+
+        # Перезаписываем файл articles.json с обновлённым списком статей
+        await self.save_articles(filtered_articles)
+
+        print(f"Статьи старше {date} успешно удалены.")
 
     async def test(self, test: str) -> None:
         self.__list_of_all_pages.append(test)

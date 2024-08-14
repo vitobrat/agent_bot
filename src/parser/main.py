@@ -27,7 +27,7 @@ async def save_to_json(data, filename):
                                       english_article=await agent.translation(entry["article"],
                                                                               system_translate_eng_prompt))
             print(url)
-            await asyncio.sleep(1)
+            await asyncio.sleep(3)
 
     # Записываем обновлённые данные в файл
     with open(filename, 'w', encoding='utf-8') as file:

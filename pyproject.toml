@@ -24,6 +24,7 @@ beautifulsoup4 = "^4.12.3"
 langgraph = "^0.2.3"
 langchain_chroma = "^0.1.2"
 langchain-google-genai = "^1.0.8"
+apscheduler = "^3.10.4"
 
 
 
