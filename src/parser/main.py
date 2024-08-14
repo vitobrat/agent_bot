@@ -1,7 +1,9 @@
+import asyncio
 import json
 import os
+from datetime import datetime
 from src.parser.async_parser import AsyncParser
-from src.agent.main import Agent
+from src.agent.main import Agent, system_translate_eng_prompt
 
 agent = Agent()
 
@@ -21,8 +23,11 @@ async def save_to_json(data, filename):
         url = entry["url"]
         if url not in existing_data:
             existing_data[url] = dict(article=entry["article"], date=entry["date"], time=entry["time"],
-                                      summarization_article=await agent.summarization(entry["article"]))
+                                      summarization_article=await agent.summarization(entry["article"]),
+                                      english_article=await agent.translation(entry["article"],
+                                                                              system_translate_eng_prompt))
             print(url)
+            await asyncio.sleep(1)
 
     # Записываем обновлённые данные в файл
     with open(filename, 'w', encoding='utf-8') as file:
@@ -45,3 +50,6 @@ async def main(target_date: str) -> None:
         await save_to_json(data_to_save, 'articles.json')
     else:
         print("No articles found or failed to fetch the page.")
+
+if __name__ == "__main__":
+    asyncio.run(main(datetime.today().strftime('%Y-%m-%d')))

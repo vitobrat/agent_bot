@@ -65,3 +65,6 @@ async def admin_parse_today_articles(call: types.CallbackQuery):
     await articles.generate_today_pages()
     await agent.generate_agent_executor()
 
+
+
+

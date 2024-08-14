@@ -10,6 +10,7 @@ from config.config import config
 import logging
 from src.bot.articles import Articles
 from src.agent.main import Agent
+from src.bot.keyboards import commands
 
 
 logger = logging.getLogger(__name__)
@@ -25,6 +26,7 @@ async def main() -> None:
     bot = Bot(token=token, default=DefaultBotProperties(parse_mode='HTML'))
     dp = Dispatcher()
     dp.include_routers(admin.router, handler_commands.router, handler_messages.router)
+    await bot.set_my_commands(commands)
 
     database = Database()
     await database.create_table()

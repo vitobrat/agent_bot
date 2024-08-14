@@ -1692,6 +1692,24 @@ tenacity = ">=8.1.0,<8.4.0 || >8.4.0,<9.0.0"
 typing-extensions = ">=4.7"
 
 [[package]]
+name = "langchain-google-genai"
+version = "1.0.8"
+description = "An integration package connecting Google's genai package and LangChain"
+optional = false
+python-versions = "<4.0,>=3.9"
+files = [
+    {file = "langchain_google_genai-1.0.8-py3-none-any.whl", hash = "sha256:675dab1afa8f165c6169512dae984c90fd9fe2e8a54bdf7d0a0ccd826ee719d4"},
+    {file = "langchain_google_genai-1.0.8.tar.gz", hash = "sha256:4b5b074476f073f4f6f0d1e74c811bb66e4caaf2d6b57b14bf6a1eab36de8c4e"},
+]
+
+[package.dependencies]
+google-generativeai = ">=0.7.0,<0.8.0"
+langchain-core = ">=0.2.17,<0.3"
+
+[package.extras]
+images = ["pillow (>=10.1.0,<11.0.0)"]
+
+[[package]]
 name = "langchain-google-vertexai"
 version = "1.0.8"
 description = "An integration package connecting Google VertexAI and LangChain"
@@ -4211,4 +4229,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "a080849c42c3c8cf8100db7f9111f72c78e8302dd1396a570273d2fb5365bd11"
+content-hash = "c4f3355afd3eef83e20c39337d698cfec191e671005ffe14abfd3b4462cbefa2"
