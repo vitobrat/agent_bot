@@ -48,6 +48,7 @@ async def main() -> None:
 
     await database.create_table()
 
+    await parser_main(today)
     await articles.clean_old_articles()
     await articles.load()
 

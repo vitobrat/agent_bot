@@ -1,9 +1,10 @@
 from aiogram.filters import BaseFilter
 from aiogram.types import TelegramObject
+from src.pgsqldatabase.database import Database
 
-admin_ids = [1044539451,]
+database = Database()
 
 
 class AdminFilter(BaseFilter):
     async def __call__(self, obj: TelegramObject):
-        return obj.from_user.id in admin_ids
+        return obj.from_user.id in await database.get_all_admins()

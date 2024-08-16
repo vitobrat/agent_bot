@@ -1,22 +1,15 @@
 import asyncio
-import json
-import os
 from datetime import datetime
 from src.parser.async_parser import AsyncParser
 from src.agent.main import Agent, system_translate_eng_prompt
+from src.bot.articles import Articles
 
 agent = Agent()
+articles = Articles()
 
 
-async def load_existing_data(filename):
-    if os.path.exists(filename):
-        with open(filename, 'r', encoding='utf-8') as file:
-            return json.load(file)
-    return {}
-
-
-async def save_to_json(data, filename):
-    existing_data = await load_existing_data(filename)
+async def save_to_json(data):
+    existing_data = await articles.load_articles()
 
     # Добавляем новые статьи, если они ещё не существуют в файле
     for entry in reversed(data):
@@ -30,11 +23,12 @@ async def save_to_json(data, filename):
             await asyncio.sleep(3)
 
     # Записываем обновлённые данные в файл
-    with open(filename, 'w', encoding='utf-8') as file:
-        json.dump(existing_data, file, ensure_ascii=False, indent=4)
+    await articles.save_articles(existing_data)
+    print("end parsing")
 
 
 async def main(target_date: str) -> None:
+    print("start parsing")
     target_date = target_date
     parser = AsyncParser(target_date)
     await parser.parse()
@@ -47,7 +41,7 @@ async def main(target_date: str) -> None:
                                                                                      parser.data["time"])]
 
     if data_to_save:
-        await save_to_json(data_to_save, 'articles.json')
+        await save_to_json(data_to_save)
     else:
         print("No articles found or failed to fetch the page.")
 

@@ -109,6 +109,7 @@ class Articles:
 
     async def clean_old_articles(self, date=(datetime.today() - timedelta(days=7)).strftime("%Y-%m-%d")) -> None:
         # Преобразуем строку с датой в объект datetime для сравнения
+        print("start clean old articles")
         cutoff_date = datetime.strptime(date, "%Y-%m-%d")
         articles = await self.load_articles()
 
@@ -121,7 +122,7 @@ class Articles:
         # Перезаписываем файл articles.json с обновлённым списком статей
         await self.save_articles(filtered_articles)
 
-        print(f"Статьи старше {date} успешно удалены.")
+        print(f"Articles older {date} was  been deleted successfully.")
 
     async def test(self, test: str) -> None:
         self.__list_of_all_pages.append(test)

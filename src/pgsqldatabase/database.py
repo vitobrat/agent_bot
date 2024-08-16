@@ -107,6 +107,16 @@ class Database:
         await conn.close()
         return [user_id[0] for user_id in rows]
 
+    async def get_all_admins(self):
+        conn = await asyncpg.connect(**database)
+        exe_command = f'''
+            SELECT user_id FROM {self.table_name}
+            WHERE is_admin = 1
+        '''
+        rows = await conn.fetch(exe_command)
+        await conn.close()
+        return [user_id[0] for user_id in rows]
+
     async def get_user_history(self, user_id):
         conn = await asyncpg.connect(**database)
         exe_command = f'''

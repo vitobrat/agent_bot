@@ -103,13 +103,15 @@ class Agent:
     def tool(self):
         return self.__tool
 
-
     @staticmethod
     async def load_articles_as_documents():
         # Преобразование статей из `Articles` в формат документов, ожидаемый LangChain
         docs = []
         for url, content in articles.all_articles.items():
-            docs.append(Document(page_content=content["english_article"]))
+            docs.append(Document(page_content=content["english_article"], metadata={
+                "url": url,
+                "date": content["date"]
+            }))
         return docs
 
     async def generate_agent_executor(self):
@@ -170,7 +172,6 @@ class Agent:
 
     @staticmethod
     async def formatted_history(history: list) -> list[dict[str, str] | Any]:
-        print(history)
         return [
             {"role": "system", "content": system_agent_prompt},
             *[
@@ -193,7 +194,6 @@ class Agent:
 
         # Добавляем текущий запрос пользователя
         eng_query = await self.translation(message.text, system_translate_eng_prompt)
-        print(eng_query)
         history.append(HumanMessage(content=user_prompt.format(query=eng_query)))
 
         chain = self.model | parser
@@ -206,7 +206,6 @@ class Agent:
 
         answer_message = await message.answer(initial_response)
         rag_response = self.agent_executor.invoke({"messages": await self.formatted_history(history)})
-        print(rag_response)
         await answer_message.edit_text(generate_response)
         async for event in chain.astream_events([
             SystemMessage(content=system_translate_rus_prompt),
@@ -238,6 +237,7 @@ class Agent:
         trimmed_history = self.trimmer.invoke(history)
         # Обновляем историю пользователя в базе данных
         await database.update_user_history(message.from_user.id, trimmed_history)
+        print("successfully answer to query!")
         return answer_message
 
     async def test_greeting(self, query: str) -> str:
