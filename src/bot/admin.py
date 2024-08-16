@@ -11,6 +11,7 @@ from aiogram.fsm.state import StatesGroup, State
 from src.parser.main import main as parser_main
 from src.bot.articles import Articles
 from src.agent.main import Agent
+import asyncio
 
 router = Router()
 database = Database()
@@ -59,10 +60,10 @@ async def admin_parse_today_articles(call: types.CallbackQuery):
     articles = Articles()
     agent = Agent()
     target_time = datetime.today().strftime('%Y-%m-%d')
-    await parser_main(target_time)
-    await articles.clean_old_articles()
-    await articles.load()
-    await agent.generate_agent_executor()
+    asyncio.create_task(parser_main(target_time))
+    asyncio.create_task(articles.clean_old_articles())
+    asyncio.create_task(articles.load())
+    asyncio.create_task(agent.generate_agent_executor())
 
 
 

@@ -57,11 +57,14 @@ async def main() -> None:
     # Устанавливаем планировщик задач
     scheduler = AsyncIOScheduler()
 
+    # Получаем текущий цикл событий
+    loop = asyncio.get_running_loop()
+
     # Запускать каждый час
-    scheduler.add_job(parse_articles, IntervalTrigger(hours=1))
+    scheduler.add_job(lambda: asyncio.run_coroutine_threadsafe(parse_articles(), loop), IntervalTrigger(hours=1))
 
     # Запускать ежедневно в 00:05
-    scheduler.add_job(clean_articles, CronTrigger(hour=0, minute=5))
+    scheduler.add_job(lambda: asyncio.run_coroutine_threadsafe(clean_articles(), loop), CronTrigger(hour=0, minute=5))
 
     scheduler.start()
 

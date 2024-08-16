@@ -3,6 +3,7 @@ from src.bot.keyboards import back_keyboard, next_prev_page_all, next_prev_page_
 from src.agent.main import Agent
 from src.pgsqldatabase.database import Database
 from src.bot.articles import Articles
+import asyncio
 
 router = Router()
 agent = Agent()
@@ -80,4 +81,4 @@ async def about_handler(call: types.CallbackQuery) -> None:
 @router.message(F.text)
 async def query(message: types.Message):
     print(message.text)
-    respond = await agent.answer(message)
+    respond = asyncio.create_task(agent.answer(message))

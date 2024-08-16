@@ -52,7 +52,7 @@ class Database:
 
     async def print_all_users(self):
         return "\n".join([f"{i}) ID - {user[0]}; Full name - {user[1]}; User name - {user[2]};Is admin - {user[3]};"
-                          f" History - {user[4][0]}" for i, user in enumerate(await self.get_all_users())])
+                          f" History - {bool(user[4])}" for i, user in enumerate(await self.get_all_users())])
 
     async def add_user(self, user_id, user_fullname, user_username, is_admin=0, history=None):
         # Проверка user_id на наличие только цифр
