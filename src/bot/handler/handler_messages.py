@@ -1,14 +1,23 @@
+"""
+This is a method with a handler for all user messages
+
+When user write some message to bot, then this module handle it.
+Also, this module handle clicks to buttons by CallbackQuery.
+This is happening helps to router which we connect in main file to dispatcher.
+Typical usage example:
+
+    from src.bot.handler import handler_messages
+    dp = Dispatcher()
+    dp.include_routers(handler_messages.router)
+"""
 from aiogram import types, F, Router, Bot
 from src.bot.keyboards import back_keyboard, next_prev_page_all, next_prev_page_today
 from src.agent.main import Agent
 from src.pgsqldatabase.database import Database
-from src.bot.articles import Articles
+from src.articles import Articles
 import asyncio
 
 router = Router()
-agent = Agent()
-database = Database()
-articles = Articles()
 
 
 def join_articles(list_of_articles: list) -> str:
@@ -18,6 +27,7 @@ def join_articles(list_of_articles: list) -> str:
 @router.callback_query(F.data.in_({"show_page_article_all",
                                    "show_page_article_all_inline_btn_next", "show_page_article_all_inline_btn_prev"}))
 async def page_articles_all_handler(call: types.CallbackQuery) -> None:
+    articles = Articles()
     if call.data == "show_page_article_all":
         await articles.page_index_all_start()
         response = join_articles(articles.list_of_all_pages[articles.page_index_all])
@@ -38,6 +48,7 @@ async def page_articles_all_handler(call: types.CallbackQuery) -> None:
                                    "show_page_article_today_inline_btn_next",
                                    "show_page_article_today_inline_btn_prev"}))
 async def page_articles_today_handler(call: types.CallbackQuery) -> None:
+    articles = Articles()
     if not articles.list_of_today_pages:
         await call.message.answer("Сегодня еще не вышла ни одна статья")
         return
@@ -59,6 +70,7 @@ async def page_articles_today_handler(call: types.CallbackQuery) -> None:
 
 @router.callback_query(F.data == "clear_history")
 async def clear_history_handler(call: types.CallbackQuery) -> None:
+    database = Database()
     await database.update_user_history(call.from_user.id, None)
     if not await database.get_user_history(call.from_user.id):
         await call.message.answer("История диалога успешно очищена!")
@@ -80,5 +92,6 @@ async def about_handler(call: types.CallbackQuery) -> None:
 
 @router.message(F.text)
 async def query(message: types.Message):
+    agent = Agent()
     print(message.text)
     respond = asyncio.create_task(agent.answer(message))

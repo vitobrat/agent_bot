@@ -1,3 +1,15 @@
+"""
+This is a method with a handler for all user commands
+
+When user write command as /command_name, then this module handle all this messages.
+Also, this module handle clicks to buttons by CallbackQuery.
+This is happening helps to router which we connect in main file to dispatcher.
+Typical usage example:
+
+    from src.bot.handler import handler_commands
+    dp = Dispatcher()
+    dp.include_routers(handler_commands.router)
+"""
 from aiogram import types, F, Router, html
 from aiogram.filters import Command
 from termcolor import colored
@@ -6,7 +18,6 @@ from src.bot.keyboards import menu_keyboard, start_keyboard, back_keyboard
 from src.pgsqldatabase.database import Database
 
 router = Router()
-database = Database()
 
 
 @router.message(Command("start"))
@@ -16,6 +27,7 @@ async def start_command(message: types.Message) -> None:
     :param message: obj message, consist information about user
     :return: None
     """
+    database = Database()
     await message.answer(f"Welcome, <b>{html.quote(message.from_user.full_name)}</b>!",
                          reply_markup=start_keyboard)
     try:

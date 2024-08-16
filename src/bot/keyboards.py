@@ -1,3 +1,10 @@
+"""
+This is a store of all keyboard buttons which utilise in bot
+
+Typical usage example:
+
+    from src.bot.keyboards import *
+"""
 from aiogram import types
 
 commands = [

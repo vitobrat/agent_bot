@@ -1,3 +1,15 @@
+"""
+A module for encode and decode json formate
+
+There are an inherit class from json.JSONEncoder to encode json formate and decode function
+to decode json file. This module use only in Database class to update and get row history.
+Typical usage example:
+
+    from src.pgsqldatabase.json_encoder import message_decoder, MessageEncoder
+
+    json.loads(row[4], object_hook=message_decoder)
+    json.dumps(new_history, cls=MessageEncoder)
+"""
 import json
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 

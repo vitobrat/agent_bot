@@ -1,3 +1,15 @@
+"""
+This is the method that works with the articles.json file
+
+There is a singleton class that provide to interaction with article.json where store all information.
+Typical usage example:
+
+    from src.articles import Articles
+
+    articles = Articles()
+    await articles.clean_old_articles()  #to delete outdated data
+    await articles.load()  #to load relevant data
+"""
 import os
 import json
 from datetime import datetime, timedelta

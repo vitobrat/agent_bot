@@ -1,13 +1,32 @@
+"""
+This module implement RAG agent chatbot
+
+This module creates a model that runs in LLM (currently on gemini-1.5-flash).
+It connects via an api key. Then it creates extraction vectors from the article text and makes a retriever tool
+that finds the information in the retriever. After that from the model and the retriever tool it creates a react agent.
+The database stores the history of each user, so when the user makes a query,
+the react agent starts building the response:
+The response is constructed from the vector text fragments that the retriever tool returns to the user's query,
+user request, and the context of the conversation history from the database.
+The model analyses all these components and responds.
+The model configuration only answers queries about cryptocurrencies.
+The model mainly uses information from articles, but if the query does not match information from the vector store,
+then the model builds a response based on its own knowledge base,
+but taking into account the context of cryptocurrencies.
+Typical usage example:
+
+    from src.agent.main import Agent
+
+    agent = Agent()
+    await agent.generate_agent_executor()
+"""
 import os
 from typing import Any
 from aiogram import types
 from config.config import config
-from langchain_nvidia_ai_endpoints import ChatNVIDIA, NVIDIAEmbeddings
-from src.pgsqldatabase.database import Database
-from langchain_core.prompts import PromptTemplate
 from langchain_core.messages import SystemMessage, trim_messages, AIMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
-from src.bot.articles import Articles
+from langchain_core.prompts import PromptTemplate
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 from langgraph.prebuilt import create_react_agent
@@ -16,39 +35,14 @@ from langchain.schema import Document
 from langchain.retrievers import RePhraseQueryRetriever
 from langchain.chains import LLMChain
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from src.pgsqldatabase.database import Database
+from src.articles import Articles
+from src.agent.prompts import (USER_PROMPT, SYSTEM_AGENT_PROMPT, SYSTEM_SUM_PROMPT, TOOL_DESCRIPTION,
+                               SYSTEM_TRANSLATE_ENG_PROMPT, SYSTEM_TRANSLATE_RUS_PROMPT, QUERY_PROMPT,
+                               GENERATE_RESPONSE, INITIAL_RESPONSE, loading_symbols)
 
-articles = Articles()
 api_key = config("config.ini", "tokens")["api_token"]
 os.environ["GOOGLE_API_KEY"] = api_key
-database = Database()
-parser = StrOutputParser()
-system_agent_prompt = ("You are an AI assistant specifically designed to assist with queries related to cryptocurrency."
-                       " Your primary task is to search for and retrieve information from the vector store,"
-                       " which contains documents specifically related to cryptocurrency topics."
-                       " If the user's query is related to cryptocurrency,"
-                       " search the vector store for relevant information and provide a detailed response."
-                       " If the user's query is not related to cryptocurrency,"
-                       " kindly inform them that you can only assist with cryptocurrency-related questions."
-                       " Always respond in a polite and professional manner."
-                       " Your responses must not contain harmful, unethical, racist, sexist, toxic,"
-                       " dangerous or illegal content."
-                       " Please ensure that your responses are socially unbiased and positive in nature."
-                       "Remember, you should only use the information stored"
-                       " in the vector store to answer questions related to cryptocurrency."
-                       " If you don't know the answer to a question, please don't spread false information.")
-
-system_sum_prompt = ("Твоя задача написать краткое содержание новости по теме криптовалют."
-                     "Напиши главный смысл новости используя 1 или 2 предложения.")
-system_translate_rus_prompt = ("Твоя задача перевести данный текст на русский."
-                               "Если текст уже на русском, то верни его в исходном состоянии."
-                               "Если в тексте написан бред, то вежливо скажи, что не можешь ответить на запрос")
-system_translate_eng_prompt = ("Your task is to translate this text into English."
-                               "If text already in english, then just return origin text."
-                               "Your response have to consist only translated text")
-
-user_prompt = PromptTemplate.from_template("You must answer only to query is related to cryptocurrency."
-                                           "Do it correctly and informatively."
-                                           "This is my query: {query}")
 
 
 class Agent:
@@ -65,9 +59,9 @@ class Agent:
                                                   temperature=0.2,
                                                   top_p=0.5,
                                                   max_tokens=512)
-            self.__system_message = SystemMessage(content=system_agent_prompt)
+            self.__system_message = SystemMessage(content=SYSTEM_AGENT_PROMPT)
             self.__trimmer = trim_messages(
-                max_tokens=500,
+                max_tokens=2000,
                 strategy="last",
                 token_counter=self.model,
                 include_system=True,
@@ -77,11 +71,16 @@ class Agent:
             self.__agent_executor = None
             self.__retriever_from_llm_chain = None
             self.__tool = None
+            self.__parser = StrOutputParser()
             self._initialized = True
 
     @property
     def model(self):
         return self.__model
+
+    @property
+    def parser(self):
+        return self.__parser
 
     @property
     def system_message(self):
@@ -106,6 +105,7 @@ class Agent:
     @staticmethod
     async def load_articles_as_documents():
         # Преобразование статей из `Articles` в формат документов, ожидаемый LangChain
+        articles = Articles()
         docs = []
         for url, content in articles.all_articles.items():
             docs.append(Document(page_content=content["english_article"], metadata={
@@ -136,10 +136,7 @@ class Agent:
         # 5. Настройка RePhraseQueryRetriever с LLMChain
         query_prompt = PromptTemplate(
             input_variables=["question"],
-            template="""You are an assistant tasked with taking a natural language query from a user
-            and converting it into a query for a vectorstore. In the process, strip out all 
-            information that is not relevant for the retrieval task and return a new, simplified
-            question for vectorstore retrieval. Here is the user query: {question}""",
+            template=QUERY_PROMPT,
         )
 
         llm = self.model
@@ -154,8 +151,7 @@ class Agent:
         self.__tool = create_retriever_tool(
             self.__retriever_from_llm_chain,
             "article_retriever",
-            "Searches and returns excerpts from the articles about cryptocurrencies."
-            "Try to returns all relative information"
+            TOOL_DESCRIPTION
         )
         tools = [self.tool]
 
@@ -163,9 +159,9 @@ class Agent:
         self.__agent_executor = create_react_agent(self.model, tools)
 
     async def summarization(self, text: str) -> str:
-        chain = self.model | parser
+        chain = self.model | self.parser
         response = chain.invoke([
-            SystemMessage(content=system_sum_prompt),
+            SystemMessage(content=SYSTEM_SUM_PROMPT),
             HumanMessage(content=text)
         ])
         return response
@@ -173,7 +169,7 @@ class Agent:
     @staticmethod
     async def formatted_history(history: list) -> list[dict[str, str] | Any]:
         return [
-            {"role": "system", "content": system_agent_prompt},
+            {"role": "system", "content": SYSTEM_AGENT_PROMPT},
             *[
                 {"role": "user" if isinstance(msg, HumanMessage) else "assistant", "content": msg.content}
                 for msg in history
@@ -181,7 +177,7 @@ class Agent:
         ]
 
     async def translation(self, text: str, sys_prompt) -> str:
-        chain = self.model | parser
+        chain = self.model | self.parser
         response = chain.invoke([
             SystemMessage(content=sys_prompt),
             HumanMessage(content=text)
@@ -189,26 +185,24 @@ class Agent:
         return response
 
     async def answer(self, message: types.Message) -> types.Message:
+        database = Database()
         # Получаем историю сообщений пользователя
         history = await database.get_user_history(message.from_user.id)
 
         # Добавляем текущий запрос пользователя
-        eng_query = await self.translation(message.text, system_translate_eng_prompt)
-        history.append(HumanMessage(content=user_prompt.format(query=eng_query)))
+        eng_query = await self.translation(message.text, SYSTEM_TRANSLATE_ENG_PROMPT)
+        history.append(HumanMessage(content=USER_PROMPT.format(query=eng_query)))
 
-        chain = self.model | parser
+        chain = self.model | self.parser
         response = ""
-        initial_response = "⏳ Ищем информацию..."
-        generate_response = "⏳ Генерация ответа..."
-        loading_symbols = ["⏳", "⌛"]
         loading_index = 0
         flag = True
 
-        answer_message = await message.answer(initial_response)
+        answer_message = await message.answer(INITIAL_RESPONSE)
         rag_response = self.agent_executor.invoke({"messages": await self.formatted_history(history)})
-        await answer_message.edit_text(generate_response)
+        await answer_message.edit_text(GENERATE_RESPONSE)
         async for event in chain.astream_events([
-            SystemMessage(content=system_translate_rus_prompt),
+            SystemMessage(content=SYSTEM_TRANSLATE_RUS_PROMPT),
             HumanMessage(content=rag_response["messages"][-1].content)
         ], version="v1"):
             kind = event["event"]
@@ -224,7 +218,7 @@ class Agent:
                         except Exception:
                             pass
             elif kind == "on_chain_start":
-                await answer_message.edit_text(f"{generate_response} {loading_symbols[loading_index]}")
+                await answer_message.edit_text(f"{GENERATE_RESPONSE} {loading_symbols[loading_index]}")
                 loading_index = (loading_index + 1) % len(loading_symbols)
 
         # Обновляем окончательный ответ
@@ -241,25 +235,26 @@ class Agent:
         return answer_message
 
     async def test_greeting(self, query: str) -> str:
-        history = await database.get_user_history(1044539451)
+        database = Database()
+        history = await database.get_user_history(await database.get_all_admins_id()[0])
 
         # Добавляем текущий запрос пользователя
-        eng_query = await self.translation(query, system_translate_eng_prompt)
-        history.append(HumanMessage(content=user_prompt.format(query=eng_query)))
+        eng_query = await self.translation(query, SYSTEM_TRANSLATE_ENG_PROMPT)
+        history.append(HumanMessage(content=USER_PROMPT.format(query=eng_query)))
 
         # Преобразуем историю в правильный формат для agent_executor
         formatted_history = await self.formatted_history(history)
         response = self.agent_executor.invoke({"messages": formatted_history})
         print(response)
-        final_response = await self.translation(response["messages"][-1].content, system_translate_rus_prompt)
+        final_response = await self.translation(response["messages"][-1].content, SYSTEM_TRANSLATE_RUS_PROMPT)
         return final_response
 
     async def test_query(self, query: str) -> str:
-        eng_query = await self.translation(query, system_translate_eng_prompt)
+        eng_query = await self.translation(query, SYSTEM_TRANSLATE_ENG_PROMPT)
         print(f"Original query: {eng_query}")
 
         # Получение модифицированного запроса
-        modified_query = self.retriever_from_llm_chain.llm_chain.run({"question": user_prompt.format(query=eng_query)})
+        modified_query = self.retriever_from_llm_chain.llm_chain.run({"question": USER_PROMPT.format(query=eng_query)})
 
         # Вывод модифицированного запроса
         print(f"Modified query: {modified_query}")
@@ -270,7 +265,5 @@ class Agent:
 
     async def test_tool(self, query: str) -> str:
         tool_result = self.tool.run(query)
-
         print(f"Tool result: {tool_result}")
-
         return tool_result

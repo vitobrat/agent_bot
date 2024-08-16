@@ -1,9 +1,27 @@
-import json
+"""
+A module for handle with user database
 
+This module do all operating with database.
+It uses PostgresSql to store database and execute all operating in async mode.
+It uses asyncpg library for async mode.
+All secrets data to connect database store in config.ini file in postgresql section.
+To obtain it, you need to parse it by config.py.
+Database exist like a class, so you need initialise it in module when you use it
+Typical usage example:
+
+    from src.pgsqldatabase.database import Database
+
+    database = Database()
+"""
+import json
 import asyncpg
 from config.config import config
 import re
-from src.json_encoder import message_decoder, MessageEncoder
+from src.pgsqldatabase.json_encoder import message_decoder, MessageEncoder
+from src.pgsqldatabase.queries import (CREATE_TABLE_QUERY, DROP_TABLE_QUERY, COUNT_USERS_QUERY, DELETE_USER_QUERY,
+                                       INSERT_USER_QUERY, GET_USER_QUERY, GET_ALL_USER_IDS_QUERY,
+                                       UPDATE_USER_HISTORY_QUERY, GET_USER_HISTORY_QUERY, GET_ALL_ADMINS_ID,
+                                       GET_ALL_USERS_QUERY)
 
 database = config("config.ini", "postgresql")
 
@@ -20,19 +38,12 @@ class Database:
 
     async def create_table(self):
         conn = await asyncpg.connect(**database)
-        exe_command = (f"CREATE TABLE IF NOT EXISTS {self.table_name}("
-                       f"user_id INTEGER PRIMARY KEY,"
-                       f"full_name TEXT,"
-                       f"user_name TEXT,"
-                       f"is_admin INTEGER DEFAULT 0,"
-                       f"history JSONB DEFAULT '[]'::jsonb)")
-        await conn.execute(exe_command)
+        await conn.execute(CREATE_TABLE_QUERY.format(self.table_name))
         await conn.close()
 
     async def get_user(self, user_id: int):
         conn = await asyncpg.connect(**database)
-        exe_command = f"SELECT * FROM {self.table_name} WHERE user_id = $1"
-        row = await conn.fetchrow(exe_command, user_id)
+        row = await conn.fetchrow(GET_USER_QUERY.format(self.table_name), user_id)
         await conn.close()
         if row:
             row = (row[0], row[1], row[2], row[3], json.loads(row[4], object_hook=message_decoder))
@@ -40,8 +51,7 @@ class Database:
 
     async def get_all_users(self):
         conn = await asyncpg.connect(**database)
-        exe_command = f" SELECT * FROM {self.table_name}"
-        rows = await conn.fetch(exe_command)
+        rows = await conn.fetch(GET_ALL_USERS_QUERY.format(self.table_name))
         await conn.close()
         if rows:
             for i in range(len(rows)):
@@ -87,43 +97,31 @@ class Database:
         conn = await asyncpg.connect(**database)
         check_user = await self.get_user(user_id)
         if check_user is None:
-            exe_command = (f"INSERT INTO {self.table_name} (user_id, full_name, user_name, is_admin, history) "
-                           f"VALUES ($1, $2, $3, $4, $5)")
-            await conn.execute(exe_command, user_id, user_fullname, user_username,
+            await conn.execute(INSERT_USER_QUERY.format(self.table_name), user_id, user_fullname, user_username,
                                is_admin, json.dumps(history, cls=MessageEncoder))
         await conn.close()
 
     async def count_users(self):
         conn = await asyncpg.connect(**database)
-        exe_command = f"SELECT COUNT(*) FROM {self.table_name}"
-        count = await conn.fetchval(exe_command)
+        count = await conn.fetchval(COUNT_USERS_QUERY.format(self.table_name))
         await conn.close()
         return count
 
     async def get_all_users_id(self):
         conn = await asyncpg.connect(**database)
-        exe_command = f"SELECT user_id FROM {self.table_name}"
-        rows = await conn.fetch(exe_command)
+        rows = await conn.fetch(GET_ALL_USER_IDS_QUERY.format(self.table_name))
         await conn.close()
         return [user_id[0] for user_id in rows]
 
-    async def get_all_admins(self):
+    async def get_all_admins_id(self) -> list:
         conn = await asyncpg.connect(**database)
-        exe_command = f'''
-            SELECT user_id FROM {self.table_name}
-            WHERE is_admin = 1
-        '''
-        rows = await conn.fetch(exe_command)
+        rows = await conn.fetch(GET_ALL_ADMINS_ID.format(self.table_name))
         await conn.close()
         return [user_id[0] for user_id in rows]
 
     async def get_user_history(self, user_id):
         conn = await asyncpg.connect(**database)
-        exe_command = f'''
-            SELECT history FROM {self.table_name}
-            WHERE user_id = $1
-        '''
-        row = await conn.fetchrow(exe_command, user_id)
+        row = await conn.fetchrow(GET_USER_HISTORY_QUERY.format(self.table_name), user_id)
         await conn.close()
         if row is None or row['history'] is None:
             return []
@@ -133,22 +131,16 @@ class Database:
         if new_history is None:
             new_history = []
         conn = await asyncpg.connect(**database)
-        exe_command = f'''
-            UPDATE {self.table_name}
-            SET history = $2
-            WHERE user_id = $1
-        '''
-        await conn.fetchrow(exe_command, user_id, json.dumps(new_history, cls=MessageEncoder))
+        await conn.fetchrow(UPDATE_USER_HISTORY_QUERY.format(self.table_name), user_id,
+                            json.dumps(new_history, cls=MessageEncoder))
         await conn.close()
 
     async def delete_all(self):
         conn = await asyncpg.connect(**database)
-        exe_command = f"DELETE FROM {self.table_name}"
-        await conn.fetch(exe_command)
+        await conn.fetch(DELETE_USER_QUERY.format(self.table_name))
         await conn.close()
 
     async def drop_all(self):
         conn = await asyncpg.connect(**database)
-        exe_command = f"DROP TABLE {self.table_name}"
-        await conn.fetch(exe_command)
+        await conn.fetch(DROP_TABLE_QUERY.format(self.table_name))
         await conn.close()

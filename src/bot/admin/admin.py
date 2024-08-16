@@ -1,20 +1,32 @@
+"""
+This is module interacts with admin panel
+
+The admin panel provides only for users whose have admin access.
+Admin access has only in users whose have 1 in is_admin row in database.
+So if admin-user write special command /admin, then this module will handle it.
+This is happening helps to router which we connect in main file to dispatcher.
+Typical usage example:
+
+    from src.bot.admin import admin
+    dp = Dispatcher()
+    dp.include_routers(admin.router)
+"""
 from asyncio import sleep
 from contextlib import suppress
 from datetime import datetime
 from aiogram import types, F, Router
 from aiogram.filters import Command
 from src.bot.keyboards import admin_keyboard, back_admin_keyboard
-from src.bot.my_filters import AdminFilter
+from src.bot.admin.my_filters import AdminFilter
 from src.pgsqldatabase.database import Database
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from src.parser.main import main as parser_main
-from src.bot.articles import Articles
+from src.articles import Articles
 from src.agent.main import Agent
 import asyncio
 
 router = Router()
-database = Database()
 
 
 class AdminState(StatesGroup):
@@ -33,6 +45,7 @@ async def admin_cmd(update, state: FSMContext):
 
 @router.callback_query(F.data == "admin_statistic", AdminFilter())
 async def admin_statistic(call: types.CallbackQuery) -> None:
+    database = Database()
     await call.message.edit_text(f"Users: {await database.print_all_users()}\n"
                                  f"Users count: {await database.count_users()}", reply_markup=back_admin_keyboard)
 
@@ -46,6 +59,7 @@ async def admin_newsletter(call: types.CallbackQuery, state: FSMContext):
 
 @router.message(AdminState.newsletter, AdminFilter())
 async def admin_newsletter_step_2(message: types.Message, state: FSMContext):
+    database = Database()
     users_id = await database.get_all_users_id()
     await state.update_data(message_newsletter=message)
     for user_id in users_id:

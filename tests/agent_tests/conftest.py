@@ -1,6 +1,6 @@
 import pytest
 from src.agent.main import Agent
-from src.bot.articles import Articles
+from src.articles import Articles
 import asyncio
 
 
