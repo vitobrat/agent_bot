@@ -40,12 +40,16 @@ Use it if the assistant suddenly started answering incorrectly or strangely
 
 ## Examples of usage
 - News articles
+
 ![img.png](img/img.png)
 - Users queries
+
 ![img_1.png](img/img_1.png)
 ![img_2.png](img/img_2.png)
 ![img_4.png](img/img_4.png)
+
 - Context history
+
 ![img_5.png](img/img_5.png)
 ![img_6.png](img/img_6.png)
 
