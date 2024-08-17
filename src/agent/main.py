@@ -160,10 +160,12 @@ class Agent:
 
     async def summarization(self, text: str) -> str:
         chain = self.model | self.parser
+        print(text)
         response = chain.invoke([
             SystemMessage(content=SYSTEM_SUM_PROMPT),
             HumanMessage(content=text)
         ])
+        print(response)
         return response
 
     @staticmethod

@@ -20,13 +20,13 @@ All functions of this bot are located in the menu,
 which you can see by clicking on Menu in the bottom left corner of the screen. 
 
 Description of each command: 
-- <b>Show all articles</b>🌐 -displays 5 news articles at a time that have been released in the last week. 
+- <b>Show all articles</b>🌐 - displays 5 news articles at a time that have been released in the last week. 
 Each article contains: "Article Description"(A summary of the entire text of the article), "
 "Article Link"(A link to the original news article), 
 "Publication Date" (the date and time when the news article was published).
 Articles are displayed sorted by date - first the newest, then the oldest.  
 Use the "Back" and "Forward" buttons to scroll through the news articles.
-- <b>Show today's articles</b>🕛- displays 1 news article each that was released today.
+- <b>Show today's articles</b>🕛 - displays 1 news article each that was released today.
 Each article contains: "Article Description"(A summary of the entire text of the article), "
 "Article Link"(A link to the original news article), 
 "Publication Date" (the date and time when the news article was published).
@@ -40,12 +40,12 @@ Use it if the assistant suddenly started answering incorrectly or strangely
 
 ## Examples of usage
 - News articles
-![img.png](img.png)
+![img.png](img/img.png)
 - Users queries
-![img_1.png](img_1.png)
-![img_2.png](img_2.png)
-![img_4.png](img_4.png)
+![img_1.png](img/img_1.png)
+![img_2.png](img/img_2.png)
+![img_4.png](img/img_4.png)
 - Context history
-![img_5.png](img_5.png)
-![img_6.png](img_6.png)
+![img_5.png](img/img_5.png)
+![img_6.png](img/img_6.png)
 
