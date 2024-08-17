@@ -11,11 +11,13 @@ Typical usage example:
     dp.include_routers(handler_messages.router)
 """
 from aiogram import types, F, Router, Bot
+import asyncio
 from src.bot.keyboards import back_keyboard, next_prev_page_all, next_prev_page_today
 from src.agent.main import Agent
 from src.pgsqldatabase.database import Database
 from src.articles import Articles
-import asyncio
+from src.bot.handler.handler_strings import CONTACTS_MESSAGE, ABOUT_PROJECT_MESSAGE
+
 
 router = Router()
 
@@ -80,13 +82,13 @@ async def clear_history_handler(call: types.CallbackQuery) -> None:
 
 @router.callback_query(F.data == "contacts")
 async def contacts_handler(call: types.CallbackQuery, bot: Bot) -> None:
-    await call.message.edit_text(f"My contacts:{(await bot.get_me()).full_name}",
+    await call.message.edit_text(CONTACTS_MESSAGE,
                                  reply_markup=back_keyboard)
 
 
 @router.callback_query(F.data == "about_project")
 async def about_handler(call: types.CallbackQuery) -> None:
-    await call.message.edit_text(f"Some information about project:{call.message.from_user.full_name}",
+    await call.message.edit_text(ABOUT_PROJECT_MESSAGE,
                                  reply_markup=back_keyboard)
 
 
@@ -94,4 +96,4 @@ async def about_handler(call: types.CallbackQuery) -> None:
 async def query(message: types.Message):
     agent = Agent()
     print(message.text)
-    respond = asyncio.create_task(agent.answer(message))
+    asyncio.create_task(agent.answer(message))

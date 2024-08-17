@@ -104,7 +104,9 @@ class Articles:
         page = []
         self.__list_of_all_pages = []
         for i, (url, content) in enumerate(reversed(self.all_articles.items())):
-            page.append(form.format(content["summarization_article"], url, content["date"], content["time"]))
+            date = content["date"].split('-')
+            page.append(form.format(content["summarization_article"],
+                                    url, f"{date[-1]}.{date[1]}.{date[0]}", content["time"]))
             if (i + 1) % 5 == 0:
                 self.__list_of_all_pages.append(page)
                 page = []
