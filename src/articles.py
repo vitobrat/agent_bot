@@ -116,7 +116,7 @@ class Articles:
     async def generate_today_pages(self) -> None:
         self.__list_of_today_pages = []
         for url, content in reversed(self.all_articles.items()):
-            if content["date"] == datetime.today().strftime('%Y-%m-%d'):
+            if content["date"] == datetime.today().strftime('%Y-%m-%d') and content["summarization_article"]:
                 date = content["date"].split('-')
                 self.list_of_today_pages.append(form.format(content["summarization_article"],
                                                             url, f"{date[-1]}.{date[1]}.{date[0]}", content["time"]))

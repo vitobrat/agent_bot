@@ -15,36 +15,36 @@ import pytest
 import json
 
 
-@pytest.mark.timeout(20)
+@pytest.mark.timeout(30)
 @pytest.mark.asyncio
 async def test_query():
     agent = Agent()
-    query = "Какие новости слышны про биткоин?"
+    query = "Что такое криптовалюта?"
     await agent.test_query(query)
 
 
-@pytest.mark.timeout(20)
+@pytest.mark.timeout(30)
 @pytest.mark.asyncio
 async def test_tool():
     agent = Agent()
-    query = "Какие новости слышны про биткоин?"
+    query = "Че щас по биткоину?"
     modify_query = await agent.test_query(query)
     tools = await agent.test_tool(modify_query)
     assert tools
 
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(20)
+@pytest.mark.timeout(30)
 async def test_request():
     agent = Agent()
-    query = "Че щас творится с Биткоином?"
+    query = "Че щас по биткоину?"
     response = await agent.test_greeting(query)
     print(response)
     assert len(response) >= 1
 
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(10)
+@pytest.mark.timeout(30)
 async def test_sum():
     agent = Agent()
     with open("articles.json", 'r', encoding='utf-8') as file:

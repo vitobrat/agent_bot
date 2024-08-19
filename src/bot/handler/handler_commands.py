@@ -29,7 +29,7 @@ async def start_command(message: types.Message) -> None:
     :return: None
     """
     database = Database()
-    await message.answer(START_COMMAND.format(html.quote(message.from_user.full_name)),
+    await message.answer(START_COMMAND.format(html.quote(message.from_user.full_name)) + HELP_COMMAND,
                          reply_markup=start_keyboard)
     try:
         await database.add_user(message.from_user.id, message.from_user.full_name, message.from_user.username)
