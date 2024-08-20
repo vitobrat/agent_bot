@@ -22,7 +22,7 @@ from src.pgsqldatabase.database import Database
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from src.parser.main import main as parser_main
-from src.articles import Articles
+from src.articles.articles import Articles
 from src.agent.main import Agent
 import asyncio
 

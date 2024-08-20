@@ -17,7 +17,7 @@ import logging
 from config.config import config
 from src.bot.handler import handler_commands, handler_messages
 from src.pgsqldatabase.database import Database
-from src.articles import Articles
+from src.articles.articles import Articles
 from src.agent.main import Agent
 from src.bot.keyboards import commands
 from src.parser.main import main as parser_main

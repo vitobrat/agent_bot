@@ -32,40 +32,12 @@ class Articles:
             self.__list_of_all_pages = []
             self.__list_of_today_pages = []
             self.__filename = "articles.json"
-            self.__page_index_all = 0
-            self.__page_index_today = 0
             self.__all_articles = None
             self._initialized = True
 
     @property
     def filename(self):
         return self.__filename
-
-    @property
-    def page_index_today(self):
-        return self.__page_index_today
-
-    async def page_index_today_start(self):
-        self.__page_index_today = 0
-
-    async def page_index_today_next(self):
-        self.__page_index_today = min(self.page_index_today + 1, len(self.list_of_today_pages) - 1)
-
-    async def page_index_today_prev(self):
-        self.__page_index_today = max(self.page_index_today - 1, 0)
-
-    @property
-    def page_index_all(self):
-        return self.__page_index_all
-
-    async def page_index_all_start(self):
-        self.__page_index_all = 0
-
-    async def page_index_all_next(self):
-        self.__page_index_all = min(self.page_index_all + 1, len(self.list_of_all_pages) - 1)
-
-    async def page_index_all_prev(self):
-        self.__page_index_all = max(self.page_index_all - 1, 0)
 
     @property
     def list_of_all_pages(self):

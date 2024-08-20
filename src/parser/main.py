@@ -16,7 +16,7 @@ from datetime import datetime
 from src.parser.async_parser import AsyncParser
 from src.agent.main import Agent
 from src.agent.prompts import SYSTEM_TRANSLATE_ENG_PROMPT
-from src.articles import Articles
+from src.articles.articles import Articles
 
 
 async def save_to_json(data: list[dict], agent: Agent, articles: Articles):

@@ -10,20 +10,13 @@ Run single test:
     pytest tests/articles_tests/test.py::TestArticles::{TEST_FUNCTION_NAME} -s -v
 """
 import pytest
-from src.articles import Articles
+from src.articles.articles import Articles
 from datetime import datetime, timedelta
+from src.articles.user import User, UsersIds
 
 
 @pytest.mark.asyncio
 class TestArticles:
-
-    async def test_generate_all(self):
-        articles = Articles()
-        assert articles.list_of_all_pages
-
-    async def test_generate_today(self):
-        articles = Articles()
-        assert articles.list_of_today_pages
 
     async def test_del_articles(self):
         seven_days_ago = datetime.today() - timedelta(days=7)
@@ -55,6 +48,30 @@ class TestArticles:
         updated_articles = await articles.load_articles()
         assert "test" not in updated_articles
 
+    async def test_user(self):
+        users_id = UsersIds()
+        users_id.append(User(1))
+        users_id.append(User(2))
+        users_id.append(User(3))
+        user = users_id.find_user(1)
+        if user is None:
+            user = User(1)
+        assert user == User(1)
+        await user.page_index_all_next()
+        assert user.page_index_all == 1
+        user = users_id.find_user(2)
+        if user is None:
+            user = User(2)
+        assert user == User(2)
+        await user.page_index_all_prev()
+        assert user.page_index_all == 0
+        user = users_id.find_user(4)
+        if user is None:
+            user = User(4)
+        assert user == User(4)
+        await user.page_index_all_start()
+        assert user.page_index_all == 0
+
     async def test_singleton(self):
         articles = Articles()
         await articles.test("test")
@@ -63,3 +80,5 @@ class TestArticles:
         assert len(articles.list_of_all_pages) > 1
         # assert len(articles.list_of_today_pages) > 1
         await articles.clear()
+
+

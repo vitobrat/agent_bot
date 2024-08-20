@@ -36,7 +36,7 @@ from langchain.retrievers import RePhraseQueryRetriever
 from langchain.chains import LLMChain
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from src.pgsqldatabase.database import Database
-from src.articles import Articles
+from src.articles.articles import Articles
 from src.agent.prompts import (USER_PROMPT, SYSTEM_AGENT_PROMPT, SYSTEM_SUM_PROMPT, TOOL_DESCRIPTION,
                                SYSTEM_TRANSLATE_ENG_PROMPT, SYSTEM_TRANSLATE_RUS_PROMPT, QUERY_PROMPT,
                                GENERATE_RESPONSE, INITIAL_RESPONSE, loading_symbols)
@@ -160,7 +160,6 @@ class Agent:
 
     async def summarization(self, text: str) -> str:
         chain = self.model | self.parser
-        print(text)
         response = chain.invoke([
             SystemMessage(content=SYSTEM_SUM_PROMPT),
             HumanMessage(content=text)
@@ -228,6 +227,7 @@ class Agent:
             await answer_message.edit_text(response)
         except Exception:
             pass
+        print(response)
         # Добавляем ответ в историю
         history.append(AIMessage(content=rag_response["messages"][-1].content))
         trimmed_history = self.trimmer.invoke(history)

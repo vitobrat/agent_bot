@@ -1,5 +1,5 @@
 import pytest
-from src.articles import Articles
+from src.articles.articles import Articles
 import asyncio
 
 

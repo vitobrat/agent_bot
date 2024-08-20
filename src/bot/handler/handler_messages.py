@@ -15,11 +15,13 @@ import asyncio
 from src.bot.keyboards import back_keyboard, next_prev_page_all, next_prev_page_today
 from src.agent.main import Agent
 from src.pgsqldatabase.database import Database
-from src.articles import Articles
+from src.articles.articles import Articles
+from src.articles.user import User, UsersIds
 from src.bot.handler.handler_strings import CONTACTS_MESSAGE, ABOUT_PROJECT_MESSAGE
 
 
 router = Router()
+users_id = UsersIds()
 
 
 def join_articles(list_of_articles: list) -> str:
@@ -30,17 +32,20 @@ def join_articles(list_of_articles: list) -> str:
                                    "show_page_article_all_inline_btn_next", "show_page_article_all_inline_btn_prev"}))
 async def page_articles_all_handler(call: types.CallbackQuery) -> None:
     articles = Articles()
+    user = users_id.find_user(call.from_user.id)
+    if user is None:
+        user = User(call.from_user.id)
+        users_id.append(user)
     if call.data == "show_page_article_all":
-        await articles.page_index_all_start()
-        response = join_articles(articles.list_of_all_pages[articles.page_index_all])
+        response = join_articles(articles.list_of_all_pages[user.page_index_all])
         await call.message.answer(response, reply_markup=next_prev_page_all)
         return
     elif call.data == "show_page_article_all_inline_btn_next":
-        await articles.page_index_all_next()
+        await user.page_index_all_next()
     elif call.data == "show_page_article_all_inline_btn_prev":
-        await articles.page_index_all_prev()
+        await user.page_index_all_prev()
     try:
-        response = join_articles(articles.list_of_all_pages[articles.page_index_all])
+        response = join_articles(articles.list_of_all_pages[user.page_index_all])
         await call.message.edit_text(response, reply_markup=next_prev_page_all)
     except Exception:
         pass
@@ -51,20 +56,24 @@ async def page_articles_all_handler(call: types.CallbackQuery) -> None:
                                    "show_page_article_today_inline_btn_prev"}))
 async def page_articles_today_handler(call: types.CallbackQuery) -> None:
     articles = Articles()
+    user = users_id.find_user(call.from_user.id)
+    if user is None:
+        user = User(call.from_user.id)
+        users_id.append(user)
     if not articles.list_of_today_pages:
         await call.message.answer("Сегодня еще не вышла ни одна статья")
         return
     if call.data == "show_page_article_today":
-        await articles.page_index_today_start()
-        response = articles.list_of_today_pages[articles.page_index_today]
+        await user.page_index_today_start()
+        response = articles.list_of_today_pages[user.page_index_today]
         await call.message.answer(response, reply_markup=next_prev_page_today)
         return
     elif call.data == "show_page_article_today_inline_btn_next":
-        await articles.page_index_today_next()
+        await user.page_index_today_next()
     elif call.data == "show_page_article_today_inline_btn_prev":
-        await articles.page_index_today_prev()
+        await user.page_index_today_prev()
     try:
-        response = articles.list_of_today_pages[articles.page_index_today]
+        response = articles.list_of_today_pages[user.page_index_today]
         await call.message.edit_text(response, reply_markup=next_prev_page_today)
     except Exception:
         pass
