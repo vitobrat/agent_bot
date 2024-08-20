@@ -1,7 +1,16 @@
+"""
+This a method where executing parsing articles
+
+The parser open the main page in async mode by aiohttp and use bs4 for parsing.
+There is one class which utilised only in parser.main.py
+Typical usage example:
+    from src.parser.async_parser import AsyncParser
+
+    parser = AsyncParser(target_date)
+"""
 from bs4 import BeautifulSoup
 import aiohttp
-
-URL = "https://ru.investing.com/news/cryptocurrency-news"
+from config.config import config
 
 
 class AsyncParser:
@@ -11,6 +20,7 @@ class AsyncParser:
                        "articles": [],
                        "date": [],
                        "time": []}
+        self.__articles_url = config("config.ini", "urls")["articles_url"]
 
     @property
     def date(self):
@@ -19,6 +29,10 @@ class AsyncParser:
     @property
     def data(self):
         return self.__data
+
+    @property
+    def articles_url(self):
+        return self.__articles_url
 
     @staticmethod
     async def fetch_article(session, url: str) -> str:
@@ -37,7 +51,7 @@ class AsyncParser:
                 return ""
 
     async def fetch_urls(self, session):
-        async with session.get(URL) as response:
+        async with session.get(self.articles_url) as response:
             soup = BeautifulSoup(await response.text(), "html.parser")
             for article in soup.find_all("article", {"data-test": "article-item"}):
                 # Ищем время публикации

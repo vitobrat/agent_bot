@@ -1,13 +1,27 @@
+"""
+This is a method with a handler for all user messages
+
+When user write some message to bot, then this module handle it.
+Also, this module handle clicks to buttons by CallbackQuery.
+This is happening helps to router which we connect in main file to dispatcher.
+Typical usage example:
+
+    from src.bot.handler import handler_messages
+    dp = Dispatcher()
+    dp.include_routers(handler_messages.router)
+"""
 from aiogram import types, F, Router, Bot
+import asyncio
 from src.bot.keyboards import back_keyboard, next_prev_page_all, next_prev_page_today
 from src.agent.main import Agent
 from src.pgsqldatabase.database import Database
-from src.bot.articles import Articles
+from src.articles.articles import Articles
+from src.articles.user import User, UsersIds
+from src.bot.handler.handler_strings import CONTACTS_MESSAGE, ABOUT_PROJECT_MESSAGE
+
 
 router = Router()
-agent = Agent()
-database = Database()
-articles = Articles()
+users_id = UsersIds()
 
 
 def join_articles(list_of_articles: list) -> str:
@@ -17,17 +31,21 @@ def join_articles(list_of_articles: list) -> str:
 @router.callback_query(F.data.in_({"show_page_article_all",
                                    "show_page_article_all_inline_btn_next", "show_page_article_all_inline_btn_prev"}))
 async def page_articles_all_handler(call: types.CallbackQuery) -> None:
+    articles = Articles()
+    user = users_id.find_user(call.from_user.id)
+    if user is None:
+        user = User(call.from_user.id)
+        users_id.append(user)
     if call.data == "show_page_article_all":
-        await articles.page_index_all_start()
-        response = join_articles(articles.list_of_all_pages[articles.page_index_all])
+        response = join_articles(articles.list_of_all_pages[user.page_index_all])
         await call.message.answer(response, reply_markup=next_prev_page_all)
         return
     elif call.data == "show_page_article_all_inline_btn_next":
-        await articles.page_index_all_next()
+        await user.page_index_all_next()
     elif call.data == "show_page_article_all_inline_btn_prev":
-        await articles.page_index_all_prev()
+        await user.page_index_all_prev()
     try:
-        response = join_articles(articles.list_of_all_pages[articles.page_index_all])
+        response = join_articles(articles.list_of_all_pages[user.page_index_all])
         await call.message.edit_text(response, reply_markup=next_prev_page_all)
     except Exception:
         pass
@@ -37,20 +55,25 @@ async def page_articles_all_handler(call: types.CallbackQuery) -> None:
                                    "show_page_article_today_inline_btn_next",
                                    "show_page_article_today_inline_btn_prev"}))
 async def page_articles_today_handler(call: types.CallbackQuery) -> None:
+    articles = Articles()
+    user = users_id.find_user(call.from_user.id)
+    if user is None:
+        user = User(call.from_user.id)
+        users_id.append(user)
     if not articles.list_of_today_pages:
         await call.message.answer("Сегодня еще не вышла ни одна статья")
         return
     if call.data == "show_page_article_today":
-        await articles.page_index_today_start()
-        response = articles.list_of_today_pages[articles.page_index_today]
+        await user.page_index_today_start()
+        response = articles.list_of_today_pages[user.page_index_today]
         await call.message.answer(response, reply_markup=next_prev_page_today)
         return
     elif call.data == "show_page_article_today_inline_btn_next":
-        await articles.page_index_today_next()
+        await user.page_index_today_next()
     elif call.data == "show_page_article_today_inline_btn_prev":
-        await articles.page_index_today_prev()
+        await user.page_index_today_prev()
     try:
-        response = articles.list_of_today_pages[articles.page_index_today]
+        response = articles.list_of_today_pages[user.page_index_today]
         await call.message.edit_text(response, reply_markup=next_prev_page_today)
     except Exception:
         pass
@@ -58,6 +81,7 @@ async def page_articles_today_handler(call: types.CallbackQuery) -> None:
 
 @router.callback_query(F.data == "clear_history")
 async def clear_history_handler(call: types.CallbackQuery) -> None:
+    database = Database()
     await database.update_user_history(call.from_user.id, None)
     if not await database.get_user_history(call.from_user.id):
         await call.message.answer("История диалога успешно очищена!")
@@ -67,17 +91,18 @@ async def clear_history_handler(call: types.CallbackQuery) -> None:
 
 @router.callback_query(F.data == "contacts")
 async def contacts_handler(call: types.CallbackQuery, bot: Bot) -> None:
-    await call.message.edit_text(f"My contacts:{(await bot.get_me()).full_name}",
+    await call.message.edit_text(CONTACTS_MESSAGE,
                                  reply_markup=back_keyboard)
 
 
 @router.callback_query(F.data == "about_project")
 async def about_handler(call: types.CallbackQuery) -> None:
-    await call.message.edit_text(f"Some information about project:{call.message.from_user.full_name}",
+    await call.message.edit_text(ABOUT_PROJECT_MESSAGE,
                                  reply_markup=back_keyboard)
 
 
 @router.message(F.text)
 async def query(message: types.Message):
+    agent = Agent()
     print(message.text)
-    respond = await agent.answer(message)
+    asyncio.create_task(agent.answer(message))
