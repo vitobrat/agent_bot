@@ -17,6 +17,7 @@ from langchain_core.messages import SystemMessage, AIMessage, HumanMessage
 
 @pytest.fixture
 def users():
+    """Fixture which return list with rows in test database"""
     users = [
         (1, "full_name1", "username1", 0, []),
         (2, "full_name2", "username2", 0, [
@@ -33,29 +34,38 @@ def users():
 
 @pytest.mark.asyncio
 class TestUsers:
+    """There are all tests relate with database
+    Attributes:
+        database: initial test database to run tests
+    """
     database = Database("users_test")
 
     async def test_add_users(self, users):
+        """Fill test database"""
         for user in users:
             await self.database.add_user(user[0], user[1], user[2], user[3], user[4])
         assert await self.database.get_all_users_id() == [1, 2, 3]
 
     async def test_incorrect_add_user1(self):
+        """Test insert incorrect user"""
         with pytest.raises(ValueError):
             await self.database.add_user("id", "full_name_test",
                                          "username_test", 0)
 
     async def test_incorrect_add_user2(self):
+        """Test insert incorrect user"""
         with pytest.raises(ValueError):
             await self.database.add_user(4, 5,
                                          "username_test", 0)
 
     async def test_incorrect_add_user3(self):
+        """Test insert incorrect user"""
         with pytest.raises(ValueError):
             await self.database.add_user(4, "full_name_test",
                                          "username_test" * 10, 0)
 
     async def test_incorrect_add_user4(self):
+        """Test insert incorrect user"""
         with pytest.raises(ValueError):
             await self.database.add_user(4, "full_name_test",
                                          "username_test", 2)
@@ -78,19 +88,7 @@ class TestUsers:
     async def test_update_user_history(self, users):
         await self.database.update_user_history(2, [])
         assert await self.database.get_user_history(2) == []
-        await self.database.update_user_history(1, [
-            SystemMessage(content="you're a good assistant"),
-            HumanMessage(content="hi! I'm bob"),
-            AIMessage(content="hi!"),
-            HumanMessage(content="I like vanilla ice cream"),
-            AIMessage(content="nice"),
-            HumanMessage(content="whats 2 + 2"),
-            AIMessage(content="4"),
-            HumanMessage(content="thanks"),
-            AIMessage(content="no problem!"),
-            HumanMessage(content="having fun?"),
-            AIMessage(content="yes!")])
-        assert await self.database.get_user_history(1) == [
+        updated_history = [
             SystemMessage(content="you're a good assistant"),
             HumanMessage(content="hi! I'm bob"),
             AIMessage(content="hi!"),
@@ -102,8 +100,11 @@ class TestUsers:
             AIMessage(content="no problem!"),
             HumanMessage(content="having fun?"),
             AIMessage(content="yes!")]
+        await self.database.update_user_history(1, updated_history)
+        assert await self.database.get_user_history(1) == updated_history
 
     async def test_delete_all_users(self, users):
+        """Test correct deleted all users and check correct behavior other functions in this case"""
         await self.database.delete_all()
         assert await self.database.count_users() == 0
         assert await self.database.get_all_users() == []

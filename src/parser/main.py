@@ -20,9 +20,19 @@ from src.articles.articles import Articles
 
 
 async def save_to_json(data: list[dict], agent: Agent, articles: Articles):
+    """Save parsed data to json file
+
+    Insert new articles to json file. Url is a key in json file, so articles only with unique url could be added.
+
+    Attributes:
+        data: list of dict where each dict look like:
+        {"url": url, "article": article, "date": date, "time": time}
+        agent: Agent object class
+        articles: Articles object class
+    """
     existing_data = await articles.load_articles()
 
-    # Добавляем новые статьи, если они ещё не существуют в файле
+    # Insert article if it doesn't consist in file
     for entry in reversed(data):
         url = entry["url"]
         if url not in existing_data:
@@ -33,12 +43,17 @@ async def save_to_json(data: list[dict], agent: Agent, articles: Articles):
             print(url)
             await asyncio.sleep(3)
 
-    # Записываем обновлённые данные в файл
+    # Write updated dict to file
     await articles.save_articles(existing_data)
     print("end parsing")
 
 
 async def main(target_date=datetime.today().strftime('%Y-%m-%d')) -> None:
+    """Parsing data from https://ru.investing.com/news/cryptocurrency-news and save it in json file.
+
+    Attributes:
+        target_date: target date string in formate like "year-month-day"
+    """
     agent = Agent()
     articles = Articles()
     print("start parsing")
@@ -46,7 +61,7 @@ async def main(target_date=datetime.today().strftime('%Y-%m-%d')) -> None:
     parser = AsyncParser(target_date)
     await parser.parse()
 
-    # Формируем структуру для сохранения в JSON
+    # make list of articles to save it to JSON
     data_to_save = [{"url": url, "article": article,
                      "date": date, "time": time} for url, article, date, time in zip(parser.data["urls"],
                                                                                      parser.data["articles"],
@@ -57,7 +72,3 @@ async def main(target_date=datetime.today().strftime('%Y-%m-%d')) -> None:
         await save_to_json(data_to_save, agent, articles)
     else:
         print("No articles found or failed to fetch the page.")
-
-
-if __name__ == "__main__":
-    asyncio.run(main(datetime.today().strftime('%Y-%m-%d')))

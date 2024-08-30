@@ -7,6 +7,7 @@ database = Database("users_test")
 
 @pytest.fixture(autouse=True, scope="session")
 def creat_db():
+    """Create empty test database for run tests"""
     assert database.table_name == "users_test"
     asyncio.run(database.drop_all())
     asyncio.run(database.create_table())

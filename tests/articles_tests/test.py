@@ -17,15 +17,16 @@ from src.articles.user import User, UsersIds
 
 @pytest.mark.asyncio
 class TestArticles:
+    """There are all tests relate with articles"""
 
     async def test_del_articles(self):
+        """Add old article in json file and then delete it"""
         seven_days_ago = datetime.today() - timedelta(days=7)
         seven_days_ago_str = seven_days_ago.strftime("%Y-%m-%d")
 
-        # Инициализируем класс Articles
         articles = Articles()
 
-        # Добавляем тестовую статью
+        # add old test article
         articles.all_articles["test"] = {
             "article": "Happycoin.club",
             "date": seven_days_ago_str,
@@ -34,21 +35,24 @@ class TestArticles:
             "english_article": "Happycoin.club"
         }
 
-        # Сохраняем статьи в файл
+        # save it in json file
         await articles.save_articles(articles.all_articles)
 
-        # Проверяем, что тестовая статья добавлена
+        # check that test article is added
         loaded_articles = await articles.load_articles()
         assert "test" in loaded_articles
 
-        # Удаляем старые статьи
+        # delete old test article (the function which we test)
         await articles.clean_old_articles(seven_days_ago_str)
 
-        # Проверяем, что статья была удалена
+        # check that test article is deleted
         updated_articles = await articles.load_articles()
         assert "test" not in updated_articles
 
     async def test_user(self):
+        """Test user behavior in bot
+        Create 4 users and simulate that they switch articles pages.
+        """
         users_id = UsersIds()
         users_id.append(User(1))
         users_id.append(User(2))
@@ -73,12 +77,13 @@ class TestArticles:
         assert user.page_index_all == 0
 
     async def test_singleton(self):
+        """Test that new object articles already consist list_of_all_pages and list_of_today_pages"""
         articles = Articles()
         await articles.test("test")
         assert articles.list_of_all_pages[-1] == "test"
         assert articles.list_of_today_pages[-1] == "test"
         assert len(articles.list_of_all_pages) > 1
-        # assert len(articles.list_of_today_pages) > 1
+        assert len(articles.list_of_today_pages) > 1
         await articles.clear()
 
 

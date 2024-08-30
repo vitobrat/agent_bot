@@ -18,6 +18,9 @@ import json
 @pytest.mark.timeout(30)
 @pytest.mark.asyncio
 async def test_query():
+    """Test how work RePhraseQueryRetriever.
+    RePhraseQueryRetriever helps to rephrase user question to effective query for vector store
+    """
     agent = Agent()
     query = "Что такое криптовалюта?"
     await agent.test_query(query)
@@ -26,6 +29,9 @@ async def test_query():
 @pytest.mark.timeout(30)
 @pytest.mark.asyncio
 async def test_tool():
+    """Test how work create_retriever_tool.
+    This tool return most relevant chunks from vector store. You have to test this chunks manual
+    """
     agent = Agent()
     query = "Че щас по биткоину?"
     modify_query = await agent.test_query(query)
@@ -36,6 +42,9 @@ async def test_tool():
 @pytest.mark.asyncio
 @pytest.mark.timeout(30)
 async def test_request():
+    """Test agent response.
+    Have to test manual
+    """
     agent = Agent()
     query = "Че щас по биткоину?"
     response = await agent.test_greeting(query)
@@ -46,6 +55,9 @@ async def test_request():
 @pytest.mark.asyncio
 @pytest.mark.timeout(30)
 async def test_sum():
+    """Test how model summarize text.
+    Have to test manual
+    """
     agent = Agent()
     with open("articles.json", 'r', encoding='utf-8') as file:
         content = json.load(file)
