@@ -15,23 +15,42 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
 
 class MessageEncoder(json.JSONEncoder):
-    def default(self, o):
-        if isinstance(o, SystemMessage) or isinstance(o, HumanMessage) or isinstance(o, AIMessage):
+    """Encode langchain type message to json format"""
+    def default(self, message: SystemMessage | HumanMessage | AIMessage | dict) -> dict:
+        """Encode message to json formate to write it to database
+
+        Attributes:
+            message: one of langchain_core.messages
+
+        Returns:
+            dict with keys "_type" ("HumanMessage" - user query or "AIMessage" - LLM response) and
+            "content" (message text)
+        """
+        if isinstance(message, SystemMessage) or isinstance(message, HumanMessage) or isinstance(message, HumanMessage):
             return {
-                '_type': o.__class__.__name__,
-                'content': o.content
+                '_type': message.__class__.__name__,
+                'content': message.content
             }
-        return super().default(o)
+        return super().default(message)
 
 
-def message_decoder(d):
-    if '_type' in d:
-        msg_type = d['_type']
-        content = d['content']
+def message_decoder(json_dict: dict) -> SystemMessage | HumanMessage | AIMessage | dict:
+    """Decorate json format to langchain type message
+
+    Attributes:
+        json_dict: json format dict with keys "_type" ("HumanMessage" - user query or "AIMessage" - LLM response) and
+        "content" (message text)
+
+    Returns:
+        one of langchain_core.messages
+    """
+    if '_type' in json_dict:
+        msg_type = json_dict['_type']
+        content = json_dict['content']
         if msg_type == 'SystemMessage':
             return SystemMessage(content=content)
         elif msg_type == 'HumanMessage':
             return HumanMessage(content=content)
         elif msg_type == 'AIMessage':
             return AIMessage(content=content)
-    return d
+    return json_dict

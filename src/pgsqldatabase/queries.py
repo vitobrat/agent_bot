@@ -11,7 +11,7 @@ SELECT user_id FROM {0}
 WHERE is_admin = 1
 '''
 
-# Create table
+# Create table if already not exists
 CREATE_TABLE_QUERY = '''
 CREATE TABLE IF NOT EXISTS {0}(
     user_id INTEGER PRIMARY KEY,
