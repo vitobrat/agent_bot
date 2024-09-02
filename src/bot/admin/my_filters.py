@@ -13,7 +13,16 @@ from src.pgsqldatabase.database import Database
 
 
 class AdminFilter(BaseFilter):
+    """Provide admin access"""
     database = Database()
 
-    async def __call__(self, obj: TelegramObject):
+    async def __call__(self, obj: TelegramObject) -> bool:
+        """Check user to admin access (1 in database table row) and return true if it is
+
+        Attribute:
+            obj: information that provides from user query (user id and e.t.c.)
+
+        Returns:
+            true if user has user access and false if it isn't
+        """
         return obj.from_user.id in await self.database.get_all_admins_id()

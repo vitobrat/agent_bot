@@ -23,10 +23,10 @@ router = Router()
 
 @router.message(Command("start"))
 async def start_command(message: types.Message) -> None:
-    """
-    handler of command /start; print some start information
-    :param message: obj message, consist information about user
-    :return: None
+    """Handler of command /start; print some start information
+
+    Attributes:
+        message: obj to get user information or send something to user
     """
     database = Database()
     await message.answer(START_COMMAND.format(html.quote(message.from_user.full_name)) + HELP_COMMAND,
@@ -41,10 +41,10 @@ async def start_command(message: types.Message) -> None:
 @router.callback_query(F.data == "help")
 @router.message(Command("help"))
 async def help_command(update) -> None:
-    """
-    handler of command /help; print useful information
-    :param update: obj message, consist information about user
-    :return: None
+    """Handler of command /help; print some start information
+
+    Attributes:
+        update: obj to get user information or send something to user
     """
     if isinstance(update, types.Message):
         await update.answer(HELP_COMMAND, reply_markup=back_keyboard)
@@ -55,6 +55,11 @@ async def help_command(update) -> None:
 @router.callback_query(F.data == "menu")
 @router.message(Command("menu"))
 async def menu_command(update) -> None:
+    """Handler of command /menu; print some start information
+
+        Attributes:
+            update: obj to get user information or send something to user
+        """
     if isinstance(update, types.Message):
         await update.answer(f"Menu:", reply_markup=menu_keyboard)
     elif isinstance(update, types.CallbackQuery):

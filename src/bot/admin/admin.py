@@ -30,12 +30,20 @@ router = Router()
 
 
 class AdminState(StatesGroup):
+    """Consist all bot states"""
     newsletter = State()
 
 
 @router.callback_query(F.data == "admin_panel", AdminFilter())
 @router.message(Command("admin"), AdminFilter())
-async def admin_cmd(update, state: FSMContext):
+async def admin_cmd(update, state: FSMContext) -> None:
+    """Show admin panel if user has admin access
+
+    Attribute:
+            update: information that provides from user query (user id and e.t.c.)
+            state: consist current bot state
+    """
+    # Reset state to default
     await state.clear()
     if isinstance(update, types.Message):
         await update.answer("Admin panel", reply_markup=admin_keyboard)
@@ -45,6 +53,11 @@ async def admin_cmd(update, state: FSMContext):
 
 @router.callback_query(F.data == "admin_statistic", AdminFilter())
 async def admin_statistic(call: types.CallbackQuery) -> None:
+    """Provide all information from database about all users if user has admin access
+
+    Attribute:
+            call: information that provides from user query (user id and e.t.c.)
+    """
     database = Database()
     await call.message.edit_text(f"Users: {await database.print_all_users()}\n"
                                  f"Users count: {await database.count_users()}", reply_markup=back_admin_keyboard)
@@ -52,6 +65,12 @@ async def admin_statistic(call: types.CallbackQuery) -> None:
 
 @router.callback_query(F.data == 'admin_newsletter', AdminFilter())
 async def admin_newsletter(call: types.CallbackQuery, state: FSMContext):
+    """Switch bot state ready to take message
+
+    Attribute:
+            call: information that provides from user query (user id and e.t.c.)
+            state: consist current bot state
+    """
     await call.message.edit_text('News letter for all users\n\n'
                                  'Input the message:', reply_markup=back_admin_keyboard)
     await state.set_state(AdminState.newsletter)
@@ -59,6 +78,12 @@ async def admin_newsletter(call: types.CallbackQuery, state: FSMContext):
 
 @router.message(AdminState.newsletter, AdminFilter())
 async def admin_newsletter_step_2(message: types.Message, state: FSMContext):
+    """Get admin message and send it to all users
+
+    Attribute:
+            message: information that provides from user query (user id and e.t.c.)
+            state: consist current bot state
+    """
     database = Database()
     users_id = await database.get_all_users_id()
     await state.update_data(message_newsletter=message)
@@ -71,6 +96,7 @@ async def admin_newsletter_step_2(message: types.Message, state: FSMContext):
 
 @router.callback_query(F.data == 'admin_parse_articles', AdminFilter())
 async def admin_parse_today_articles(call: types.CallbackQuery):
+    """Parsing data in manual mode"""
     articles = Articles()
     agent = Agent()
     target_time = datetime.today().strftime('%Y-%m-%d')
@@ -78,7 +104,3 @@ async def admin_parse_today_articles(call: types.CallbackQuery):
     asyncio.create_task(articles.clean_old_articles())
     asyncio.create_task(articles.load())
     asyncio.create_task(agent.generate_agent_executor())
-
-
-
-
