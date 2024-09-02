@@ -46,6 +46,7 @@ os.environ["GOOGLE_API_KEY"] = api_key
 
 
 class Agent:
+    """Singleton class that realize RAG agent"""
     _instance = None
 
     def __new__(cls, *args, **kwargs):
@@ -54,6 +55,7 @@ class Agent:
         return cls._instance
 
     def __init__(self):
+        """Initial configurate attributes"""
         if not hasattr(self, '_initialized'):
             self.__model = ChatGoogleGenerativeAI(model="gemini-1.5-flash",
                                                   temperature=0.2,
@@ -103,8 +105,12 @@ class Agent:
         return self.__tool
 
     @staticmethod
-    async def load_articles_as_documents():
-        # Преобразование статей из `Articles` в формат документов, ожидаемый LangChain
+    async def load_articles_as_documents() -> list[Document]:
+        """Transformation articles from "Articles" in format waiting LangChain
+
+        Returns:
+            list of Documents which further separates to chain and add to vector store
+        """
         articles = Articles()
         docs = []
         for url, content in articles.all_articles.items():
@@ -114,15 +120,17 @@ class Agent:
             }))
         return docs
 
-    async def generate_agent_executor(self):
+    async def generate_agent_executor(self) -> None:
+        """Initial RAG agent"""
+        # 1. Transform articles to list of "Document"
         docs = await self.load_articles_as_documents()
 
-        # 2. Разбиение на части
+        # 2. Separate to chunks
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=750, chunk_overlap=500)
         splits = text_splitter.split_documents(docs)
         print(f"Number of splits: {len(splits)}")
 
-        # 3. Векторизация
+        # 3. Vectorize
         try:
             vectorstore = Chroma.from_documents(documents=splits,
                                                 embedding=GoogleGenerativeAIEmbeddings(model="models/embedding-001"))
@@ -130,10 +138,11 @@ class Agent:
             print(f"Error during vectorization: {e}")
             raise
 
-        # 4. Настройка ретривера
+        # 4. Retriever configurate
         retriever = vectorstore.as_retriever()
 
-        # 5. Настройка RePhraseQueryRetriever с LLMChain
+        # 5. Configurate RePhraseQueryRetriever with LLMChain.
+        # It changes user query specifically for searching in vector store
         query_prompt = PromptTemplate(
             input_variables=["question"],
             template=QUERY_PROMPT,
@@ -147,7 +156,8 @@ class Agent:
             llm_chain=llm_chain
         )
 
-        # 6. Настройка инструмента с RePhraseQueryRetriever
+        # 6. Configurate tool with RePhraseQueryRetriever
+        # It output most relevant chunks to user query
         self.__tool = create_retriever_tool(
             self.__retriever_from_llm_chain,
             "article_retriever",
@@ -155,10 +165,18 @@ class Agent:
         )
         tools = [self.tool]
 
-        # 7. Настройка REACT агента
+        # 7. Configurate RAG agent
         self.__agent_executor = create_react_agent(self.model, tools)
 
     async def summarization(self, text: str) -> str:
+        """Summarize text in 2-3 sentences
+
+        Attributes:
+            text: string is needed to summarize
+
+        Returns:
+            summarize text
+        """
         chain = self.model | self.parser
         response = chain.invoke([
             SystemMessage(content=SYSTEM_SUM_PROMPT),
@@ -169,6 +187,14 @@ class Agent:
 
     @staticmethod
     async def formatted_history(history: list) -> list[dict[str, str] | Any]:
+        """Transform LangChain Messages to input type for agent
+
+        Attributes:
+            history: list of SystemMessage or AIMessage or HumanMessage
+
+        Returns:
+            list of dicts that can be written by RAG agent
+        """
         return [
             {"role": "system", "content": SYSTEM_AGENT_PROMPT},
             *[
@@ -177,7 +203,16 @@ class Agent:
             ]
         ]
 
-    async def translation(self, text: str, sys_prompt) -> str:
+    async def translation(self, text: str, sys_prompt: str) -> str:
+        """Translate text to another language
+
+        Translate text from english to russian or russian to english
+
+        Attributes:
+            text: text that needs to translate
+            sys_prompt: prompt (SYSTEM_TRANSLATE_ENG_PROMPT translate to english
+            or SYSTEM_TRANSLATE_RUS_PROMPT translate to russian)
+        """
         chain = self.model | self.parser
         response = chain.invoke([
             SystemMessage(content=sys_prompt),
@@ -186,11 +221,19 @@ class Agent:
         return response
 
     async def answer(self, message: types.Message) -> types.Message:
+        """RAG agent response to user query
+
+        Attributes:
+            message: telegram message that consist user query
+
+        Returns:
+             telegram message that consist model response
+        """
         database = Database()
-        # Получаем историю сообщений пользователя
+        # Get user dialog history
         history = await database.get_user_history(message.from_user.id)
 
-        # Добавляем текущий запрос пользователя
+        # Add to history current user query
         eng_query = await self.translation(message.text, SYSTEM_TRANSLATE_ENG_PROMPT)
         history.append(HumanMessage(content=USER_PROMPT.format(query=eng_query)))
 
@@ -200,8 +243,12 @@ class Agent:
         flag = True
 
         answer_message = await message.answer(INITIAL_RESPONSE)
+
+        # Transform dialog history to special format to agent executor
         rag_response = self.agent_executor.invoke({"messages": await self.formatted_history(history)})
         await answer_message.edit_text(GENERATE_RESPONSE)
+
+        # stream model response
         async for event in chain.astream_events([
             SystemMessage(content=SYSTEM_TRANSLATE_RUS_PROMPT),
             HumanMessage(content=rag_response["messages"][-1].content)
@@ -222,29 +269,35 @@ class Agent:
                 await answer_message.edit_text(f"{GENERATE_RESPONSE} {loading_symbols[loading_index]}")
                 loading_index = (loading_index + 1) % len(loading_symbols)
 
-        # Обновляем окончательный ответ
+        # Refresh message by last model response
         try:
             await answer_message.edit_text(response)
         except Exception:
             pass
         print(response)
-        # Добавляем ответ в историю
+        # Add model response to history
         history.append(AIMessage(content=rag_response["messages"][-1].content))
         trimmed_history = self.trimmer.invoke(history)
-        # Обновляем историю пользователя в базе данных
+        # Update user dialog history in database
         await database.update_user_history(message.from_user.id, trimmed_history)
         print("successfully answer to query!")
         return answer_message
 
     async def test_greeting(self, query: str) -> str:
+        """Test function to check model response
+
+        Attributes:
+            query: simulite user query
+
+        Returns:
+             model response
+        """
         database = Database()
         history = await database.get_user_history(await database.get_all_admins_id()[0])
 
-        # Добавляем текущий запрос пользователя
         eng_query = await self.translation(query, SYSTEM_TRANSLATE_ENG_PROMPT)
         history.append(HumanMessage(content=USER_PROMPT.format(query=eng_query)))
 
-        # Преобразуем историю в правильный формат для agent_executor
         formatted_history = await self.formatted_history(history)
         response = self.agent_executor.invoke({"messages": formatted_history})
         print(response)
@@ -252,6 +305,14 @@ class Agent:
         return final_response
 
     async def test_query(self, query: str) -> str:
+        """Test how RePhraseQueryRetriever transform user query to vector store
+
+        Attributes:
+            query: user query
+
+        Returns:
+            transform user query
+        """
         eng_query = await self.translation(query, SYSTEM_TRANSLATE_ENG_PROMPT)
         print(f"Original query: {eng_query}")
 
@@ -266,6 +327,14 @@ class Agent:
         return modified_query
 
     async def test_tool(self, query: str) -> str:
+        """Test what create_retriever_tool output
+
+        Attributes:
+            query: user query
+
+        Returns:
+            Most relevant chunks to user query
+        """
         tool_result = self.tool.run(query)
         print(f"Tool result: {tool_result}")
         return tool_result

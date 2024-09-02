@@ -26,7 +26,7 @@ class MessageEncoder(json.JSONEncoder):
             dict with keys "_type" ("HumanMessage" - user query or "AIMessage" - LLM response) and
             "content" (message text)
         """
-        if isinstance(message, SystemMessage) or isinstance(message, HumanMessage) or isinstance(message, HumanMessage):
+        if isinstance(message, SystemMessage) or isinstance(message, HumanMessage) or isinstance(message, AIMessage):
             return {
                 '_type': message.__class__.__name__,
                 'content': message.content

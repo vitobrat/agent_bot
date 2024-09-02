@@ -177,15 +177,14 @@ class Database:
         await conn.close()
         return [user_id[0] for user_id in rows]
 
-    async def get_user_history(self, user_id: int) -> list[dict]:
+    async def get_user_history(self, user_id: int) -> list:
         """Get user dialog history with LLM
         
         Attributes:
             user_id: user telegram id
             
         Returns:
-            list of dicts each has "_type" ("HumanMessage" - user query or "AIMessage" - LLM response) and
-            "content" (message text)
+            list of LangChain "HumanMessage" - user query or "AIMessage" - LLM response
         """
         conn = await asyncpg.connect(**database)
         row = await conn.fetchrow(GET_USER_HISTORY_QUERY.format(self.table_name), user_id)
