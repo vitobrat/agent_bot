@@ -120,7 +120,7 @@ class Articles:
                                                             url, f"{date[-1]}.{date[1]}.{date[0]}", content["time"]))
 
     async def clean_old_articles(self, date=(datetime.today() - timedelta(days=7)).strftime("%Y-%m-%d")) -> None:
-        """Clean too old articles and update json file
+        """Clean too old articles and without necessary information and update json file
 
         Attributes:
             date: str format date (year-month-day). Older this date all articles is deleted
@@ -130,10 +130,11 @@ class Articles:
         cutoff_date = datetime.strptime(date, "%Y-%m-%d")
         articles = await self.load_articles()
 
-        # Filter articles that have published after cutoff_date
+        # Filter articles that have published after cutoff_date and have necessary information
         filtered_articles = {
             url: content for url, content in articles.items()
-            if datetime.strptime(content['date'], "%Y-%m-%d") > cutoff_date
+            if datetime.strptime(content['date'], "%Y-%m-%d") > cutoff_date and content["article"]
+            and content["summarization_article"] and content["english_article"]
         }
 
         # Update json file with actual articles

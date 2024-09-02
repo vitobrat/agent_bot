@@ -12,7 +12,6 @@ from datetime import datetime
 from aiogram.client.default import DefaultBotProperties
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from apscheduler.triggers.cron import CronTrigger
 import logging
 from config.config import config
 from src.bot.handler import handler_commands, handler_messages
@@ -35,14 +34,6 @@ async def parse_articles(today: str) -> None:
     articles = Articles()
     agent = Agent()
     await parser_main(today)
-    await articles.load()
-    await agent.generate_agent_executor()
-
-
-async def clean_articles() -> None:
-    """Clean old articles"""
-    articles = Articles()
-    agent = Agent()
     await articles.clean_old_articles()
     await articles.load()
     await agent.generate_agent_executor()
@@ -95,9 +86,6 @@ async def main() -> None:
 
     # Launch parsing every hour
     scheduler.add_job(lambda: asyncio.run_coroutine_threadsafe(parse_articles(today), loop), IntervalTrigger(hours=1))
-
-    # Launch every day in 00:05 (am)
-    scheduler.add_job(lambda: asyncio.run_coroutine_threadsafe(clean_articles(), loop), CronTrigger(hour=0, minute=5))
 
     scheduler.start()
 

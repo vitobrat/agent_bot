@@ -3,9 +3,9 @@ This module implement RAG agent chatbot
 
 This module creates a model that runs in LLM (currently on gemini-1.5-flash).
 It connects via an api key. Then it creates extraction vectors from the article text and makes a retriever tool
-that finds the information in the retriever. After that from the model and the retriever tool it creates a react agent.
+that finds the information in the retriever. After that from the model and the retriever tool it creates a RAG agent.
 The database stores the history of each user, so when the user makes a query,
-the react agent starts building the response:
+the RAG agent starts building the response:
 The response is constructed from the vector text fragments that the retriever tool returns to the user's query,
 user request, and the context of the conversation history from the database.
 The model analyses all these components and responds.
