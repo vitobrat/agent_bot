@@ -11,6 +11,7 @@ Typical usage example:
     dp = Dispatcher()
     dp.include_routers(admin.router)
 """
+
 from asyncio import sleep
 from contextlib import suppress
 from datetime import datetime
@@ -31,6 +32,7 @@ router = Router()
 
 class AdminState(StatesGroup):
     """Consist all bot states"""
+
     newsletter = State()
 
 
@@ -59,11 +61,14 @@ async def admin_statistic(call: types.CallbackQuery) -> None:
             call: information that provides from user query (user id and e.t.c.)
     """
     database = Database()
-    await call.message.edit_text(f"Users: {await database.print_all_users()}\n"
-                                 f"Users count: {await database.count_users()}", reply_markup=back_admin_keyboard)
+    await call.message.edit_text(
+        f"Users: {await database.print_all_users()}\n"
+        f"Users count: {await database.count_users()}",
+        reply_markup=back_admin_keyboard,
+    )
 
 
-@router.callback_query(F.data == 'admin_newsletter', AdminFilter())
+@router.callback_query(F.data == "admin_newsletter", AdminFilter())
 async def admin_newsletter(call: types.CallbackQuery, state: FSMContext):
     """Switch bot state ready to take message
 
@@ -71,8 +76,10 @@ async def admin_newsletter(call: types.CallbackQuery, state: FSMContext):
             call: information that provides from user query (user id and e.t.c.)
             state: consist current bot state
     """
-    await call.message.edit_text('News letter for all users\n\n'
-                                 'Input the message:', reply_markup=back_admin_keyboard)
+    await call.message.edit_text(
+        "News letter for all users\n\n" "Input the message:",
+        reply_markup=back_admin_keyboard,
+    )
     await state.set_state(AdminState.newsletter)
 
 
@@ -94,12 +101,12 @@ async def admin_newsletter_step_2(message: types.Message, state: FSMContext):
     await state.clear()
 
 
-@router.callback_query(F.data == 'admin_parse_articles', AdminFilter())
+@router.callback_query(F.data == "admin_parse_articles", AdminFilter())
 async def admin_parse_today_articles(call: types.CallbackQuery):
     """Parsing data in manual mode"""
     articles = Articles()
     agent = Agent()
-    target_time = datetime.today().strftime('%Y-%m-%d')
+    target_time = datetime.today().strftime("%Y-%m-%d")
     asyncio.create_task(parser_main(target_time))
     asyncio.create_task(articles.clean_old_articles())
     asyncio.create_task(articles.load())

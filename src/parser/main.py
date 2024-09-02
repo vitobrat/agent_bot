@@ -11,6 +11,7 @@ Typical usage example:
 
     asyncio.create_task(parser_main(target_time))
 """
+
 import asyncio
 from datetime import datetime
 from src.parser.async_parser import AsyncParser
@@ -36,10 +37,15 @@ async def save_to_json(data: list[dict], agent: Agent, articles: Articles):
     for entry in reversed(data):
         url = entry["url"]
         if url not in existing_data:
-            existing_data[url] = dict(article=entry["article"], date=entry["date"], time=entry["time"],
-                                      summarization_article=await agent.summarization(entry["article"]),
-                                      english_article=await agent.translation(entry["article"],
-                                                                              SYSTEM_TRANSLATE_ENG_PROMPT))
+            existing_data[url] = dict(
+                article=entry["article"],
+                date=entry["date"],
+                time=entry["time"],
+                summarization_article=await agent.summarization(entry["article"]),
+                english_article=await agent.translation(
+                    entry["article"], SYSTEM_TRANSLATE_ENG_PROMPT
+                ),
+            )
             print(url)
             await asyncio.sleep(3)
 
@@ -48,7 +54,7 @@ async def save_to_json(data: list[dict], agent: Agent, articles: Articles):
     print("end parsing")
 
 
-async def main(target_date=datetime.today().strftime('%Y-%m-%d')) -> None:
+async def main(target_date=datetime.today().strftime("%Y-%m-%d")) -> None:
     """Parsing data from https://ru.investing.com/news/cryptocurrency-news and save it in json file.
 
     Attributes:
@@ -62,11 +68,15 @@ async def main(target_date=datetime.today().strftime('%Y-%m-%d')) -> None:
     await parser.parse()
 
     # make list of articles to save it to JSON
-    data_to_save = [{"url": url, "article": article,
-                     "date": date, "time": time} for url, article, date, time in zip(parser.data["urls"],
-                                                                                     parser.data["articles"],
-                                                                                     parser.data["date"],
-                                                                                     parser.data["time"])]
+    data_to_save = [
+        {"url": url, "article": article, "date": date, "time": time}
+        for url, article, date, time in zip(
+            parser.data["urls"],
+            parser.data["articles"],
+            parser.data["date"],
+            parser.data["time"],
+        )
+    ]
 
     if data_to_save:
         await save_to_json(data_to_save, agent, articles)

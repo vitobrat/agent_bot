@@ -10,6 +10,7 @@ Typical usage example:
     dp = Dispatcher()
     dp.include_routers(handler_commands.router)
 """
+
 from aiogram import types, F, Router, html
 from aiogram.filters import Command
 from termcolor import colored
@@ -29,10 +30,16 @@ async def start_command(message: types.Message) -> None:
         message: obj to get user information or send something to user
     """
     database = Database()
-    await message.answer(START_COMMAND.format(html.quote(message.from_user.full_name)) + HELP_COMMAND,
-                         reply_markup=start_keyboard)
+    await message.answer(
+        START_COMMAND.format(html.quote(message.from_user.full_name)) + HELP_COMMAND,
+        reply_markup=start_keyboard,
+    )
     try:
-        await database.add_user(message.from_user.id, message.from_user.full_name, message.from_user.username)
+        await database.add_user(
+            message.from_user.id,
+            message.from_user.full_name,
+            message.from_user.username,
+        )
     except ValueError as e:
         print(colored(e, "red"))
     print(message.from_user.id, message.from_user.full_name)
@@ -57,11 +64,10 @@ async def help_command(update) -> None:
 async def menu_command(update) -> None:
     """Handler of command /menu; print some start information
 
-        Attributes:
-            update: obj to get user information or send something to user
-        """
+    Attributes:
+        update: obj to get user information or send something to user
+    """
     if isinstance(update, types.Message):
         await update.answer(f"Menu:", reply_markup=menu_keyboard)
     elif isinstance(update, types.CallbackQuery):
         await update.message.edit_text(f"Menu:", reply_markup=menu_keyboard)
-

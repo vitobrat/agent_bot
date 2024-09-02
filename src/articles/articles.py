@@ -10,13 +10,12 @@ Typical usage example:
     await articles.clean_old_articles()  #to delete outdated data
     await articles.load()  #to load relevant data
 """
+
 import os
 import json
 from datetime import datetime, timedelta
 
-form = ("Описание статьи: {0}\n"
-        "Ссылка на статью: {1}\n"
-        "Дата публикации: {2}, {3}\n")
+form = "Описание статьи: {0}\n" "Ссылка на статью: {1}\n" "Дата публикации: {2}, {3}\n"
 
 
 class Articles:
@@ -35,6 +34,7 @@ class Articles:
         list_of_today_pages: list with summarize information of each article which was publicised today
         all_articles: dict with information as in json file
     """
+
     _instance = None
 
     def __new__(cls, *args, **kwargs):
@@ -77,14 +77,14 @@ class Articles:
             dict with information as in json file
         """
         if os.path.exists(self.filename):
-            with open(self.filename, 'r', encoding='utf-8') as file:
+            with open(self.filename, "r", encoding="utf-8") as file:
                 return json.load(file)
         return {}
 
     async def save_articles(self, articles: dict) -> None:
         """Save dict with new parse data in json file"""
         if os.path.exists(self.filename):
-            with open(self.filename, 'w', encoding='utf-8') as file:
+            with open(self.filename, "w", encoding="utf-8") as file:
                 json.dump(articles, file, ensure_ascii=False, indent=4)
 
     async def load(self) -> None:
@@ -101,9 +101,15 @@ class Articles:
         page = []
         self.__list_of_all_pages = []
         for i, (url, content) in enumerate(reversed(self.all_articles.items())):
-            date = content["date"].split('-')
-            page.append(form.format(content["summarization_article"],
-                                    url, f"{date[-1]}.{date[1]}.{date[0]}", content["time"]))
+            date = content["date"].split("-")
+            page.append(
+                form.format(
+                    content["summarization_article"],
+                    url,
+                    f"{date[-1]}.{date[1]}.{date[0]}",
+                    content["time"],
+                )
+            )
             if (i + 1) % 5 == 0:
                 self.__list_of_all_pages.append(page)
                 page = []
@@ -114,12 +120,23 @@ class Articles:
         """Refresh data in list with today articles"""
         self.__list_of_today_pages = []
         for url, content in reversed(self.all_articles.items()):
-            if content["date"] == datetime.today().strftime('%Y-%m-%d') and content["summarization_article"]:
-                date = content["date"].split('-')
-                self.list_of_today_pages.append(form.format(content["summarization_article"],
-                                                            url, f"{date[-1]}.{date[1]}.{date[0]}", content["time"]))
+            if (
+                content["date"] == datetime.today().strftime("%Y-%m-%d")
+                and content["summarization_article"]
+            ):
+                date = content["date"].split("-")
+                self.list_of_today_pages.append(
+                    form.format(
+                        content["summarization_article"],
+                        url,
+                        f"{date[-1]}.{date[1]}.{date[0]}",
+                        content["time"],
+                    )
+                )
 
-    async def clean_old_articles(self, date=(datetime.today() - timedelta(days=7)).strftime("%Y-%m-%d")) -> None:
+    async def clean_old_articles(
+        self, date=(datetime.today() - timedelta(days=7)).strftime("%Y-%m-%d")
+    ) -> None:
         """Clean too old articles and without necessary information and update json file
 
         Attributes:
@@ -132,9 +149,12 @@ class Articles:
 
         # Filter articles that have published after cutoff_date and have necessary information
         filtered_articles = {
-            url: content for url, content in articles.items()
-            if datetime.strptime(content['date'], "%Y-%m-%d") > cutoff_date and content["article"]
-            and content["summarization_article"] and content["english_article"]
+            url: content
+            for url, content in articles.items()
+            if datetime.strptime(content["date"], "%Y-%m-%d") > cutoff_date
+            and content["article"]
+            and content["summarization_article"]
+            and content["english_article"]
         }
 
         # Update json file with actual articles

@@ -8,6 +8,7 @@ Typical usage example:
 
     parser = AsyncParser(target_date)
 """
+
 from bs4 import BeautifulSoup
 import aiohttp
 from config.config import config
@@ -15,6 +16,7 @@ from config.config import config
 
 class AsyncParser:
     """Parsing data from website"""
+
     def __init__(self, date):
         """Initialize object for parsing.
 
@@ -22,10 +24,7 @@ class AsyncParser:
             date: target parsing date
         """
         self.__date = date
-        self.__data = {"urls": [],
-                       "articles": [],
-                       "date": [],
-                       "time": []}
+        self.__data = {"urls": [], "articles": [], "date": [], "time": []}
         self.__articles_url = config("config.ini", "urls")["articles_url"]
 
     @property
@@ -56,9 +55,9 @@ class AsyncParser:
         """
         async with session.get(url) as response:
             if response.status == 200:
-                soup = BeautifulSoup(await response.text(), 'html.parser')
+                soup = BeautifulSoup(await response.text(), "html.parser")
                 article = ""
-                for element in soup.find_all(['p', "blockquote"]):
+                for element in soup.find_all(["p", "blockquote"]):
                     text = element.get_text()
                     text += "\n"
                     article += text
@@ -86,7 +85,9 @@ class AsyncParser:
             soup = BeautifulSoup(await response.text(), "html.parser")
             for article in soup.find_all("article", {"data-test": "article-item"}):
                 # Search published time
-                time_element = article.find("time", {"data-test": "article-publish-date"})
+                time_element = article.find(
+                    "time", {"data-test": "article-publish-date"}
+                )
                 if time_element:
                     # Получаем дату из атрибута dateTime
                     article_date = time_element["datetime"].split(" ")[0]
@@ -98,9 +99,13 @@ class AsyncParser:
                         if link and "href" in link.attrs:
                             # add article information to dict
                             self.data["urls"].append(link["href"])
-                            self.data["articles"].append(await self.fetch_article(session, link["href"]))
+                            self.data["articles"].append(
+                                await self.fetch_article(session, link["href"])
+                            )
                             self.data["date"].append(article_date)
-                            self.data["time"].append(time_element["datetime"].split(" ")[-1])
+                            self.data["time"].append(
+                                time_element["datetime"].split(" ")[-1]
+                            )
 
     async def parse(self):
         """Create async request session and execute parsing"""

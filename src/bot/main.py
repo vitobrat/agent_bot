@@ -6,6 +6,7 @@ When bot start, it creates (if it needs) database, parsing new articles,
 load it to the store and generate agent execution. Then the articles parsing is implemented in auto mode.
 To start the bot you should run expectly this file: poetry run python -m src.bot.main
 """
+
 from aiogram import Bot, Dispatcher
 import asyncio
 from datetime import datetime
@@ -44,7 +45,7 @@ async def main() -> None:
 
     It starts telegram bot, create database if it needed, load list of articles, configure agent and schedule parsing
     """
-    today = datetime.today().strftime('%Y-%m-%d')
+    today = datetime.today().strftime("%Y-%m-%d")
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
@@ -55,7 +56,7 @@ async def main() -> None:
     token = config("config.ini", "tokens")["bot_token"]
 
     # Initial bot
-    bot = Bot(token=token, default=DefaultBotProperties(parse_mode='HTML'))
+    bot = Bot(token=token, default=DefaultBotProperties(parse_mode="HTML"))
 
     # Create dispatcher and relate it to routers
     dp = Dispatcher()
@@ -85,7 +86,10 @@ async def main() -> None:
     loop = asyncio.get_running_loop()
 
     # Launch parsing every hour
-    scheduler.add_job(lambda: asyncio.run_coroutine_threadsafe(parse_articles(today), loop), IntervalTrigger(hours=1))
+    scheduler.add_job(
+        lambda: asyncio.run_coroutine_threadsafe(parse_articles(today), loop),
+        IntervalTrigger(hours=1),
+    )
 
     scheduler.start()
 

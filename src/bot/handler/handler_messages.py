@@ -10,6 +10,7 @@ Typical usage example:
     dp = Dispatcher()
     dp.include_routers(handler_messages.router)
 """
+
 from aiogram import types, F, Router, Bot
 import asyncio
 from src.bot.keyboards import back_keyboard, next_prev_page_all, next_prev_page_today
@@ -36,8 +37,15 @@ def join_articles(list_of_articles: list) -> str:
     return "----------\n".join(list_of_articles)
 
 
-@router.callback_query(F.data.in_({"show_page_article_all",
-                                   "show_page_article_all_inline_btn_next", "show_page_article_all_inline_btn_prev"}))
+@router.callback_query(
+    F.data.in_(
+        {
+            "show_page_article_all",
+            "show_page_article_all_inline_btn_next",
+            "show_page_article_all_inline_btn_prev",
+        }
+    )
+)
 async def page_articles_all_handler(call: types.CallbackQuery) -> None:
     """Show the right page of articles
 
@@ -72,18 +80,24 @@ async def page_articles_all_handler(call: types.CallbackQuery) -> None:
         pass
 
 
-@router.callback_query(F.data.in_({"show_page_article_today",
-                                   "show_page_article_today_inline_btn_next",
-                                   "show_page_article_today_inline_btn_prev"}))
+@router.callback_query(
+    F.data.in_(
+        {
+            "show_page_article_today",
+            "show_page_article_today_inline_btn_next",
+            "show_page_article_today_inline_btn_prev",
+        }
+    )
+)
 async def page_articles_today_handler(call: types.CallbackQuery) -> None:
     """Show the right page of today articles
 
-        When user open or switch page the router decorator take this event call and function handle user query
-        (show starts today articles or switch it to another)
+    When user open or switch page the router decorator take this event call and function handle user query
+    (show starts today articles or switch it to another)
 
-        Attribute:
-            call: information that provides from user query (user id and e.t.c.)
-        """
+    Attribute:
+        call: information that provides from user query (user id and e.t.c.)
+    """
     articles = Articles()
     user = users_id.find_user(call.from_user.id)
     # If user start event in first time then we add him in list and start monitor his index page
@@ -136,8 +150,7 @@ async def contacts_handler(call: types.CallbackQuery) -> None:
     Attribute:
             call: information that provides from user query (user id and e.t.c.)
     """
-    await call.message.edit_text(CONTACTS_MESSAGE,
-                                 reply_markup=back_keyboard)
+    await call.message.edit_text(CONTACTS_MESSAGE, reply_markup=back_keyboard)
 
 
 @router.callback_query(F.data == "about_project")
@@ -147,8 +160,7 @@ async def about_handler(call: types.CallbackQuery) -> None:
     Attribute:
             call: information that provides from user query (user id and e.t.c.)
     """
-    await call.message.edit_text(ABOUT_PROJECT_MESSAGE,
-                                 reply_markup=back_keyboard)
+    await call.message.edit_text(ABOUT_PROJECT_MESSAGE, reply_markup=back_keyboard)
 
 
 @router.message(F.text)

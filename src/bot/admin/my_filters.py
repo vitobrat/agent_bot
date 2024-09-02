@@ -7,6 +7,7 @@ Typical usage example:
     from src.bot.admin.my_filters import AdminFilter
     @router.callback_query(F.data == "admin_panel", AdminFilter())
 """
+
 from aiogram.filters import BaseFilter
 from aiogram.types import TelegramObject
 from src.pgsqldatabase.database import Database
@@ -14,6 +15,7 @@ from src.pgsqldatabase.database import Database
 
 class AdminFilter(BaseFilter):
     """Provide admin access"""
+
     database = Database()
 
     async def __call__(self, obj: TelegramObject) -> bool:

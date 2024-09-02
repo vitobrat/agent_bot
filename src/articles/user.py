@@ -4,6 +4,7 @@ This a module with user information
 This module is needed for scrolling news articles pages. When user open the articles for the first time,
 then the new user is created, and then he can scroll pages.
 """
+
 from src.articles.articles import Articles
 
 
@@ -12,6 +13,7 @@ class User:
 
     This class defines which user show which page from list in class Articles
     """
+
     articles = Articles()
 
     def __init__(self, user_id: int):
@@ -47,7 +49,9 @@ class User:
 
     async def page_index_today_next(self):
         """Switch next page or do nothing if it last page"""
-        self.__page_index_today = min(self.page_index_today + 1, len(User.articles.list_of_today_pages) - 1)
+        self.__page_index_today = min(
+            self.page_index_today + 1, len(User.articles.list_of_today_pages) - 1
+        )
 
     async def page_index_today_prev(self):
         """Switch previous page or do nothing if it first page"""
@@ -64,7 +68,9 @@ class User:
 
     async def page_index_all_next(self):
         """Switch next page or do nothing if it last page"""
-        self.__page_index_all = min(self.page_index_all + 1, len(User.articles.list_of_all_pages) - 1)
+        self.__page_index_all = min(
+            self.page_index_all + 1, len(User.articles.list_of_all_pages) - 1
+        )
 
     async def page_index_all_prev(self):
         """Switch previous page or do nothing if it first page"""

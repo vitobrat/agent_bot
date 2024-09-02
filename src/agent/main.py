@@ -20,11 +20,17 @@ Typical usage example:
     agent = Agent()
     await agent.generate_agent_executor()
 """
+
 import os
 from typing import Any
 from aiogram import types
 from config.config import config
-from langchain_core.messages import SystemMessage, trim_messages, AIMessage, HumanMessage
+from langchain_core.messages import (
+    SystemMessage,
+    trim_messages,
+    AIMessage,
+    HumanMessage,
+)
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -37,9 +43,18 @@ from langchain.chains import LLMChain
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from src.pgsqldatabase.database import Database
 from src.articles.articles import Articles
-from src.agent.prompts import (USER_PROMPT, SYSTEM_AGENT_PROMPT, SYSTEM_SUM_PROMPT, TOOL_DESCRIPTION,
-                               SYSTEM_TRANSLATE_ENG_PROMPT, SYSTEM_TRANSLATE_RUS_PROMPT, QUERY_PROMPT,
-                               GENERATE_RESPONSE, INITIAL_RESPONSE, loading_symbols)
+from src.agent.prompts import (
+    USER_PROMPT,
+    SYSTEM_AGENT_PROMPT,
+    SYSTEM_SUM_PROMPT,
+    TOOL_DESCRIPTION,
+    SYSTEM_TRANSLATE_ENG_PROMPT,
+    SYSTEM_TRANSLATE_RUS_PROMPT,
+    QUERY_PROMPT,
+    GENERATE_RESPONSE,
+    INITIAL_RESPONSE,
+    loading_symbols,
+)
 
 api_key = config("config.ini", "tokens")["api_token"]
 os.environ["GOOGLE_API_KEY"] = api_key
@@ -47,6 +62,7 @@ os.environ["GOOGLE_API_KEY"] = api_key
 
 class Agent:
     """Singleton class that realize RAG agent"""
+
     _instance = None
 
     def __new__(cls, *args, **kwargs):
@@ -56,11 +72,10 @@ class Agent:
 
     def __init__(self):
         """Initial configurate attributes"""
-        if not hasattr(self, '_initialized'):
-            self.__model = ChatGoogleGenerativeAI(model="gemini-1.5-flash",
-                                                  temperature=0.2,
-                                                  top_p=0.5,
-                                                  max_tokens=512)
+        if not hasattr(self, "_initialized"):
+            self.__model = ChatGoogleGenerativeAI(
+                model="gemini-1.5-flash", temperature=0.2, top_p=0.5, max_tokens=512
+            )
             self.__system_message = SystemMessage(content=SYSTEM_AGENT_PROMPT)
             self.__trimmer = trim_messages(
                 max_tokens=2000,
@@ -114,10 +129,12 @@ class Agent:
         articles = Articles()
         docs = []
         for url, content in articles.all_articles.items():
-            docs.append(Document(page_content=content["english_article"], metadata={
-                "url": url,
-                "date": content["date"]
-            }))
+            docs.append(
+                Document(
+                    page_content=content["english_article"],
+                    metadata={"url": url, "date": content["date"]},
+                )
+            )
         return docs
 
     async def generate_agent_executor(self) -> None:
@@ -126,14 +143,18 @@ class Agent:
         docs = await self.load_articles_as_documents()
 
         # 2. Separate to chunks
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=750, chunk_overlap=500)
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=750, chunk_overlap=500
+        )
         splits = text_splitter.split_documents(docs)
         print(f"Number of splits: {len(splits)}")
 
         # 3. Vectorize
         try:
-            vectorstore = Chroma.from_documents(documents=splits,
-                                                embedding=GoogleGenerativeAIEmbeddings(model="models/embedding-001"))
+            vectorstore = Chroma.from_documents(
+                documents=splits,
+                embedding=GoogleGenerativeAIEmbeddings(model="models/embedding-001"),
+            )
         except Exception as e:
             print(f"Error during vectorization: {e}")
             raise
@@ -152,16 +173,13 @@ class Agent:
         llm_chain = LLMChain(llm=llm, prompt=query_prompt)
 
         self.__retriever_from_llm_chain = RePhraseQueryRetriever(
-            retriever=retriever,
-            llm_chain=llm_chain
+            retriever=retriever, llm_chain=llm_chain
         )
 
         # 6. Configurate tool with RePhraseQueryRetriever
         # It output most relevant chunks to user query
         self.__tool = create_retriever_tool(
-            self.__retriever_from_llm_chain,
-            "article_retriever",
-            TOOL_DESCRIPTION
+            self.__retriever_from_llm_chain, "article_retriever", TOOL_DESCRIPTION
         )
         tools = [self.tool]
 
@@ -178,10 +196,9 @@ class Agent:
             summarize text
         """
         chain = self.model | self.parser
-        response = chain.invoke([
-            SystemMessage(content=SYSTEM_SUM_PROMPT),
-            HumanMessage(content=text)
-        ])
+        response = chain.invoke(
+            [SystemMessage(content=SYSTEM_SUM_PROMPT), HumanMessage(content=text)]
+        )
         print(response)
         return response
 
@@ -198,9 +215,12 @@ class Agent:
         return [
             {"role": "system", "content": SYSTEM_AGENT_PROMPT},
             *[
-                {"role": "user" if isinstance(msg, HumanMessage) else "assistant", "content": msg.content}
+                {
+                    "role": "user" if isinstance(msg, HumanMessage) else "assistant",
+                    "content": msg.content,
+                }
                 for msg in history
-            ]
+            ],
         ]
 
     async def translation(self, text: str, sys_prompt: str) -> str:
@@ -214,10 +234,9 @@ class Agent:
             or SYSTEM_TRANSLATE_RUS_PROMPT translate to russian)
         """
         chain = self.model | self.parser
-        response = chain.invoke([
-            SystemMessage(content=sys_prompt),
-            HumanMessage(content=text)
-        ])
+        response = chain.invoke(
+            [SystemMessage(content=sys_prompt), HumanMessage(content=text)]
+        )
         return response
 
     async def answer(self, message: types.Message) -> types.Message:
@@ -245,14 +264,19 @@ class Agent:
         answer_message = await message.answer(INITIAL_RESPONSE)
 
         # Transform dialog history to special format to agent executor
-        rag_response = self.agent_executor.invoke({"messages": await self.formatted_history(history)})
+        rag_response = self.agent_executor.invoke(
+            {"messages": await self.formatted_history(history)}
+        )
         await answer_message.edit_text(GENERATE_RESPONSE)
 
         # stream model response
-        async for event in chain.astream_events([
-            SystemMessage(content=SYSTEM_TRANSLATE_RUS_PROMPT),
-            HumanMessage(content=rag_response["messages"][-1].content)
-        ], version="v1"):
+        async for event in chain.astream_events(
+            [
+                SystemMessage(content=SYSTEM_TRANSLATE_RUS_PROMPT),
+                HumanMessage(content=rag_response["messages"][-1].content),
+            ],
+            version="v1",
+        ):
             kind = event["event"]
             if kind == "on_chat_model_stream":
                 content = event["data"]["chunk"].content
@@ -266,7 +290,9 @@ class Agent:
                         except Exception:
                             pass
             elif kind == "on_chain_start":
-                await answer_message.edit_text(f"{GENERATE_RESPONSE} {loading_symbols[loading_index]}")
+                await answer_message.edit_text(
+                    f"{GENERATE_RESPONSE} {loading_symbols[loading_index]}"
+                )
                 loading_index = (loading_index + 1) % len(loading_symbols)
 
         # Refresh message by last model response
@@ -301,7 +327,9 @@ class Agent:
         formatted_history = await self.formatted_history(history)
         response = self.agent_executor.invoke({"messages": formatted_history})
         print(response)
-        final_response = await self.translation(response["messages"][-1].content, SYSTEM_TRANSLATE_RUS_PROMPT)
+        final_response = await self.translation(
+            response["messages"][-1].content, SYSTEM_TRANSLATE_RUS_PROMPT
+        )
         return final_response
 
     async def test_query(self, query: str) -> str:
@@ -317,7 +345,9 @@ class Agent:
         print(f"Original query: {eng_query}")
 
         # Получение модифицированного запроса
-        modified_query = self.retriever_from_llm_chain.llm_chain.run({"question": USER_PROMPT.format(query=eng_query)})
+        modified_query = self.retriever_from_llm_chain.llm_chain.run(
+            {"question": USER_PROMPT.format(query=eng_query)}
+        )
 
         # Вывод модифицированного запроса
         print(f"Modified query: {modified_query}")
