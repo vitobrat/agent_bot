@@ -352,8 +352,6 @@ class Agent:
         # Вывод модифицированного запроса
         print(f"Modified query: {modified_query}")
 
-        assert eng_query != modified_query
-
         return modified_query
 
     async def test_tool(self, query: str) -> str:
