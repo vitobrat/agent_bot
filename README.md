@@ -38,6 +38,37 @@ Use it if the assistant suddenly started answering incorrectly or strangely
 - <b>About the project</b>🔍 - information about the creation and the logic of the project.
 - <b>Developer's contacts</b>📱 - links how to contact the developer of this project.
 
+## Installation
+
+1. Clone Repository
+
+```git clone https://github.com/vitobrat/agent_bot.git```
+
+2. Install dependencies helps poetry
+
+```poetry install```
+
+3. Create config.ini file in config/config.ini and input your secrets. config.ini template:
+
+    
+    [postgresql]  # database config
+    host = ***
+    database = ***
+    user = ***
+    port = ***
+    password = ***
+
+    [tokens]
+    bot_token = ***  # your telegram token
+    api_token = ***  # your LLM api token
+
+    [urls]
+    articles_url = https://ru.investing.com/news/cryptocurrency-news
+
+4. Run bot:
+
+```poetry run python -m src.bot.main```
+
 ## Examples of usage
 - News articles
 
