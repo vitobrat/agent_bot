@@ -49,8 +49,7 @@ Use it if the assistant suddenly started answering incorrectly or strangely
 ```poetry install```
 
 3. Create config.ini file in config/config.ini and input your secrets. config.ini template:
-
-    
+```
     [postgresql]  # database config
     host = ***
     database = ***
@@ -64,6 +63,7 @@ Use it if the assistant suddenly started answering incorrectly or strangely
 
     [urls]
     articles_url = https://ru.investing.com/news/cryptocurrency-news
+```
 
 4. Run bot:
 
